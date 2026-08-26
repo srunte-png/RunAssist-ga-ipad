@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="RunAssist GA">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon-512.png">
-<title>RunAssist GA iPad v0.5.5</title>
+<title>RunAssist GA iPad v0.5.6</title>
 <style>
 :root{--p:#168a82;--pd:#0d5f59;--soft:#eaf7f5;--line:#cfe0e1;--ink:#24383a;--muted:#6d7f82}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -52,7 +52,7 @@ input[type=file]{position:absolute;left:-9999px}.scrub{width:100%;margin:12px 0}
 </style>
 </head>
 <body>
-<header><div class="brand"><div><div class="logo"><span>Run</span>Assist</div><div class="note">GA · iPad PWA v0.5.5</div></div><div class="note">IC · Winkelanalyse</div></div></header>
+<header><div class="brand"><div><div class="logo"><span>Run</span>Assist</div><div class="note">GA · iPad PWA v0.5.6</div></div><div class="note">IC · Winkelanalyse</div></div></header>
 <main>
 
 <section class="card">
@@ -105,14 +105,14 @@ input[type=file]{position:absolute;left:-9999px}.scrub{width:100%;margin:12px 0}
 
 <section class="card">
 <h2>6 · Initial Contact · Winkelanalyse (Pilot)</h2>
-<p class="note">Der gespeicherte Initial-Contact-Frame wird hier groß geöffnet. Die Messpunkte lassen sich direkt mit dem Finger verschieben. RunAssist berechnet daraus bildbasierte 2D-Winkel und vergleicht sie mit klinischen Orientierungsbereichen.</p>
+<p class="note"><b>Referenzbein = immer das Bein auf der gefilmten Kameraseite.</b> Setze die anatomischen Landmarken selbst. RunAssist berechnet erst nach vollständiger Markierung die bildbasierten 2D-Winkel.</p>
 <div class="icGrid">
 <div>
 <div id="icStage" class="icStage"><div id="icEmpty" class="note" style="color:#dfe8e8;padding:20px;text-align:center">Noch kein Initial-Contact-Frame gespeichert.</div><img id="icImage" alt="Initial Contact" hidden><canvas id="icCanvas"></canvas></div>
-<div class="icActions" style="margin-top:8px"><button id="icReset">↺ Messpunkte zurücksetzen</button><button id="icLoadFrame" class="primary">IC-Frame aktualisieren</button></div>
+<div class="icActions" style="margin-top:8px"><button id="icReset">↺ Landmarken neu setzen</button><button id="icUndo">← Letzten Punkt löschen</button><button id="icLoadFrame" class="primary">IC-Frame aktualisieren</button></div>
 </div>
 <div class="icTools">
-<div class="pointHelp"><b>Messpunkte:</b><br>S = Schulter · H = Hüfte · K = Knie · A = Sprunggelenk · F = Vorfuß<br><br>Punkte antippen und ziehen. Winkel werden sofort neu berechnet.</div>
+<div class="pointHelp"><b>Referenzbein:</b> kameraseitiges Bein<br><br><b>Landmarken:</b><br>S = Schulter · H = Hüfte · K = Knie · A = Sprunggelenk · F = Vorfuß<br><br><b id="icPrompt">1/5 · Bitte Schulter antippen.</b><br><br>Nach dem Setzen können alle Punkte mit dem Finger verschoben werden.</div>
 <div class="measure"><div class="measureHead"><h3>Hüfte · Flexion</h3><span id="hipVal" class="val">—</span></div><div class="ref">Referenz IC: 20–30° Flexion</div><div id="hipEval" class="eval">Noch nicht gemessen</div></div>
 <div class="measure"><div class="measureHead"><h3>Knie · Flexion</h3><span id="kneeVal" class="val">—</span></div><div class="ref">Referenz IC: 0–10° Flexion</div><div id="kneeEval" class="eval">Noch nicht gemessen</div></div>
 <div class="measure"><div class="measureHead"><h3>OSG · Dorsalextension</h3><span id="ankleVal" class="val">—</span></div><div class="ref">Orientierung IC: ca. 0–5° Dorsalextension</div><div id="ankleEval" class="eval">Noch nicht gemessen</div></div>
@@ -265,23 +265,61 @@ $('openCase').onchange=async e=>{
 
 
 const icStage=$('icStage'),icImg=$('icImage'),icCanvas=$('icCanvas'),icCtx=icCanvas.getContext('2d');
-let icPts=null,dragKey=null;
+let icPts={},dragKey=null,setIndex=0;
 const icKeys=['shoulder','hip','knee','ankle','forefoot'];
 const icLabels={shoulder:'S',hip:'H',knee:'K',ankle:'A',forefoot:'F'};
-function defaultIcPoints(){return{shoulder:{x:.44,y:.18},hip:{x:.47,y:.42},knee:{x:.52,y:.64},ankle:{x:.49,y:.86},forefoot:{x:.64,y:.90}}}
-function loadIcFrame(){const ic=saved[0];if(!ic||!ic.image){icImg.hidden=true;$('icEmpty').hidden=false;icPts=null;drawIc();return}$('icEmpty').hidden=true;icImg.hidden=false;icImg.onload=()=>{if(!icPts)icPts=defaultIcPoints();resizeIc();drawIc()};icImg.src=ic.image;if(icImg.complete){if(!icPts)icPts=defaultIcPoints();resizeIc();drawIc()}}
+const icNames={shoulder:'Schulter',hip:'Hüfte',knee:'Knie',ankle:'Sprunggelenk',forefoot:'Vorfuß'};
+function clearIcMeasurements(){
+  $('hipVal').textContent='—';$('kneeVal').textContent='—';$('ankleVal').textContent='—';
+  ['hipEval','kneeEval','ankleEval'].forEach(id=>{$(id).textContent='Noch nicht gemessen';$(id).className='eval'});
+  $('icFinding').textContent='Automatischer IC-Befund erscheint nach Setzen aller fünf Landmarken.';
+}
+function updateIcPrompt(){
+  if(setIndex<icKeys.length)$('icPrompt').textContent=(setIndex+1)+'/5 · Bitte '+icNames[icKeys[setIndex]]+' am kameraseitigen Referenzbein antippen.';
+  else $('icPrompt').textContent='✓ Alle Landmarken gesetzt. Punkte können jetzt verschoben werden.';
+}
+function resetIcPoints(){icPts={};setIndex=0;dragKey=null;clearIcMeasurements();updateIcPrompt();drawIc()}
+function loadIcFrame(){
+  const ic=saved[0];
+  if(!ic||!ic.image){icImg.hidden=true;$('icEmpty').hidden=false;resetIcPoints();return}
+  $('icEmpty').hidden=true;icImg.hidden=false;
+  icImg.onload=()=>{resizeIc();resetIcPoints()};
+  icImg.src=ic.image;
+  if(icImg.complete){resizeIc();resetIcPoints()}
+}
 function resizeIc(){const r=icStage.getBoundingClientRect(),dpr=Math.max(1,window.devicePixelRatio||1);icCanvas.width=Math.max(1,Math.round(r.width*dpr));icCanvas.height=Math.max(1,Math.round(r.height*dpr));icCtx.setTransform(dpr,0,0,dpr,0,0)}
 function screenPoint(p){const r=icStage.getBoundingClientRect();return{x:p.x*r.width,y:p.y*r.height}}
 function normPoint(x,y){const r=icStage.getBoundingClientRect();return{x:Math.max(0,Math.min(1,x/r.width)),y:Math.max(0,Math.min(1,y/r.height))}}
 function angleABC(a,b,c){const u={x:a.x-b.x,y:a.y-b.y},w={x:c.x-b.x,y:c.y-b.y},dot=u.x*w.x+u.y*w.y,nu=Math.hypot(u.x,u.y),nw=Math.hypot(w.x,w.y);if(!nu||!nw)return NaN;return Math.acos(Math.max(-1,Math.min(1,dot/(nu*nw))))*180/Math.PI}
-function calcIc(){if(!icPts)return null;const p={};icKeys.forEach(k=>p[k]=screenPoint(icPts[k]));return{hip:Math.max(0,180-angleABC(p.shoulder,p.hip,p.knee)),knee:Math.max(0,180-angleABC(p.hip,p.knee,p.ankle)),ankle:90-angleABC(p.knee,p.ankle,p.forefoot)}}
+function allIcSet(){return icKeys.every(k=>icPts[k])}
+function calcIc(){if(!allIcSet())return null;const p={};icKeys.forEach(k=>p[k]=screenPoint(icPts[k]));return{hip:Math.max(0,180-angleABC(p.shoulder,p.hip,p.knee)),knee:Math.max(0,180-angleABC(p.hip,p.knee,p.ankle)),ankle:90-angleABC(p.knee,p.ankle,p.forefoot)}}
 function classify(v,lo,hi,label){if(!Number.isFinite(v))return{text:'Noch nicht gemessen',cls:''};if(v<lo)return{text:(lo-v).toFixed(1)+'° unter Referenz · '+label+' vermindert',cls:'warn'};if(v>hi)return{text:(v-hi).toFixed(1)+'° über Referenz · '+label+' vermehrt',cls:'warn'};return{text:'im Orientierungsbereich',cls:'good'}}
-function drawIc(){const r=icStage.getBoundingClientRect();icCtx.clearRect(0,0,r.width,r.height);if(!icPts)return;const p={};icKeys.forEach(k=>p[k]=screenPoint(icPts[k]));icCtx.lineWidth=3;icCtx.strokeStyle='rgba(255,255,255,.92)';icCtx.beginPath();icCtx.moveTo(p.shoulder.x,p.shoulder.y);icCtx.lineTo(p.hip.x,p.hip.y);icCtx.lineTo(p.knee.x,p.knee.y);icCtx.lineTo(p.ankle.x,p.ankle.y);icCtx.lineTo(p.forefoot.x,p.forefoot.y);icCtx.stroke();icKeys.forEach(k=>{const q=p[k];icCtx.beginPath();icCtx.fillStyle='#168a82';icCtx.arc(q.x,q.y,11,0,Math.PI*2);icCtx.fill();icCtx.lineWidth=2;icCtx.strokeStyle='white';icCtx.stroke();icCtx.fillStyle='white';icCtx.font='bold 10px -apple-system';icCtx.textAlign='center';icCtx.textBaseline='middle';icCtx.fillText(icLabels[k],q.x,q.y)});const m=calcIc();if(!m)return;$('hipVal').textContent=m.hip.toFixed(1)+'°';$('kneeVal').textContent=m.knee.toFixed(1)+'°';$('ankleVal').textContent=(m.ankle>=0?'+':'')+m.ankle.toFixed(1)+'°';const he=classify(m.hip,20,30,'Hüftflexion'),ke=classify(m.knee,0,10,'Knieflexion'),ae=classify(m.ankle,0,5,'Dorsalextension');[['hipEval',he],['kneeEval',ke],['ankleEval',ae]].forEach(([id,e])=>{$(id).textContent=e.text;$(id).className='eval '+e.cls});const f=[];if(m.hip<20)f.push('verminderte Hüftflexion');else if(m.hip>30)f.push('vermehrte Hüftflexion');if(m.knee>10)f.push('vermehrte Knieflexion');if(m.ankle<0)f.push('OSG plantarflexierter als Orientierung');else if(m.ankle>5)f.push('vermehrte OSG-Dorsalextension');$('icFinding').textContent=f.length?'IC: '+f.join(' · '):'IC: gemessene Pilotwerte im hinterlegten Orientierungsbereich.'}
+function drawIc(){
+  const r=icStage.getBoundingClientRect();icCtx.clearRect(0,0,r.width,r.height);
+  const placed=icKeys.filter(k=>icPts[k]),p={};placed.forEach(k=>p[k]=screenPoint(icPts[k]));
+  if(placed.length>1){icCtx.lineWidth=3;icCtx.strokeStyle='rgba(255,255,255,.92)';icCtx.beginPath();icCtx.moveTo(p[placed[0]].x,p[placed[0]].y);for(let i=1;i<placed.length;i++)icCtx.lineTo(p[placed[i]].x,p[placed[i]].y);icCtx.stroke()}
+  placed.forEach(k=>{const q=p[k];icCtx.beginPath();icCtx.fillStyle='#168a82';icCtx.arc(q.x,q.y,11,0,Math.PI*2);icCtx.fill();icCtx.lineWidth=2;icCtx.strokeStyle='white';icCtx.stroke();icCtx.fillStyle='white';icCtx.font='bold 10px -apple-system';icCtx.textAlign='center';icCtx.textBaseline='middle';icCtx.fillText(icLabels[k],q.x,q.y)});
+  const m=calcIc();if(!m){clearIcMeasurements();return}
+  $('hipVal').textContent=m.hip.toFixed(1)+'°';$('kneeVal').textContent=m.knee.toFixed(1)+'°';$('ankleVal').textContent=(m.ankle>=0?'+':'')+m.ankle.toFixed(1)+'°';
+  const he=classify(m.hip,20,30,'Hüftflexion'),ke=classify(m.knee,0,10,'Knieflexion'),ae=classify(m.ankle,0,5,'Dorsalextension');
+  [['hipEval',he],['kneeEval',ke],['ankleEval',ae]].forEach(([id,e])=>{$(id).textContent=e.text;$(id).className='eval '+e.cls});
+  const f=[];if(m.hip<20)f.push('verminderte Hüftflexion');else if(m.hip>30)f.push('vermehrte Hüftflexion');if(m.knee>10)f.push('vermehrte Knieflexion');if(m.ankle<0)f.push('OSG plantarflexierter als Orientierung');else if(m.ankle>5)f.push('vermehrte OSG-Dorsalextension');
+  $('icFinding').textContent=f.length?'IC · kameraseitiges Referenzbein: '+f.join(' · '):'IC · kameraseitiges Referenzbein: gemessene Pilotwerte im hinterlegten Orientierungsbereich.'
+}
 function pointerXY(e){const r=icStage.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
-icCanvas.addEventListener('pointerdown',e=>{if(!icPts)return;const q=pointerXY(e);let best=null,bd=32;icKeys.forEach(k=>{const p=screenPoint(icPts[k]),d=Math.hypot(p.x-q.x,p.y-q.y);if(d<bd){bd=d;best=k}});if(best){dragKey=best;icCanvas.setPointerCapture(e.pointerId);e.preventDefault()}});
-icCanvas.addEventListener('pointermove',e=>{if(!dragKey||!icPts)return;const q=pointerXY(e);icPts[dragKey]=normPoint(q.x,q.y);drawIc();e.preventDefault()});
+icCanvas.addEventListener('pointerdown',e=>{
+  if(icImg.hidden)return;
+  const q=pointerXY(e);let best=null,bd=32;
+  Object.keys(icPts).forEach(k=>{const p=screenPoint(icPts[k]),d=Math.hypot(p.x-q.x,p.y-q.y);if(d<bd){bd=d;best=k}});
+  if(best){dragKey=best;icCanvas.setPointerCapture(e.pointerId);e.preventDefault();return}
+  if(setIndex<icKeys.length){const k=icKeys[setIndex];icPts[k]=normPoint(q.x,q.y);setIndex++;updateIcPrompt();drawIc();e.preventDefault()}
+});
+icCanvas.addEventListener('pointermove',e=>{if(!dragKey)return;const q=pointerXY(e);icPts[dragKey]=normPoint(q.x,q.y);drawIc();e.preventDefault()});
 icCanvas.addEventListener('pointerup',()=>dragKey=null);icCanvas.addEventListener('pointercancel',()=>dragKey=null);
-$('icReset').onclick=()=>{icPts=defaultIcPoints();drawIc()};$('icLoadFrame').onclick=()=>{icPts=defaultIcPoints();loadIcFrame()};window.addEventListener('resize',()=>{resizeIc();drawIc()});
+$('icReset').onclick=resetIcPoints;
+$('icUndo').onclick=()=>{if(setIndex>0){setIndex--;delete icPts[icKeys[setIndex]];updateIcPrompt();drawIc()}};
+$('icLoadFrame').onclick=loadIcFrame;
+window.addEventListener('resize',()=>{resizeIc();drawIc()});
 
 renderPhases();upd();loadIcFrame();
 </script>
