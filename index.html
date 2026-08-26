@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="RunAssist GA">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon-512.png">
-<title>RunAssist GA iPad v0.5.3</title>
+<title>RunAssist GA iPad v0.5.4</title>
 <style>
 :root{--p:#168a82;--pd:#0d5f59;--soft:#eaf7f5;--line:#cfe0e1;--ink:#24383a;--muted:#6d7f82}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -32,13 +32,30 @@ input[type=file]{position:absolute;left:-9999px}.scrub{width:100%;margin:12px 0}
 .thumb img{width:100%;height:100%;object-fit:contain;background:#111}.phaseMeta{font-size:11px;color:var(--muted);min-height:16px;margin-bottom:7px}.phase button{width:100%;min-height:44px}
 @media(max-width:760px){.controls{grid-template-columns:repeat(3,1fr)}.info{grid-template-columns:1fr 1fr}.phases{grid-template-columns:1fr 1fr}}
 @media(max-width:480px){.phases{grid-template-columns:1fr}}
+
+.casebar{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.casebar button,.casebar label{min-height:52px}
+.caseinfo{margin-top:8px;font-size:11px;color:var(--muted);line-height:1.45}
+@media(max-width:620px){.casebar{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-<header><div class="brand"><div><div class="logo"><span>Run</span>Assist</div><div class="note">GA · iPad PWA v0.5.3</div></div><div class="note">Gangphasen & Frames</div></div></header>
+<header><div class="brand"><div><div class="logo"><span>Run</span>Assist</div><div class="note">GA · iPad PWA v0.5.4</div></div><div class="note">Fall speichern & laden</div></div></header>
 <main>
+
 <section class="card">
-<h2>1 · Gangvideo</h2>
+<h2>1 · Fall</h2>
+<div class="casebar">
+<button id="saveCase" class="primary">💾 Fall speichern</button>
+<label class="pick" for="openCase">📂 Gespeicherten Fall öffnen</label>
+<input id="openCase" type="file" accept=".runassist-ga,.json,application/json">
+</div>
+<div id="caseStatus" class="status diag">Noch kein Fall gespeichert oder geöffnet.</div>
+<div class="caseinfo">Gespeichert werden alle 9 Gangphasen mit Zeitstempel, Arbeits-Frame und Vorschaubild. Das Originalvideo selbst wird nicht in die Falldatei eingebettet. Beim späteren Öffnen wählst du das zugehörige Video erneut aus der Fotomediathek.</div>
+</section>
+
+<section class="card">
+<h2>2 · Gangvideo</h2>
 <div class="controls" style="grid-template-columns:1fr 1fr">
 <label class="pick primary" for="file">🎞️ Aus Fotomediathek / Dateien</label>
 <label class="pick" for="camera">📷 Video aufnehmen</label>
@@ -49,7 +66,7 @@ input[type=file]{position:absolute;left:-9999px}.scrub{width:100%;margin:12px 0}
 </section>
 
 <section class="card">
-<h2>2 · Wiedergabe & Frame-Navigation</h2>
+<h2>3 · Wiedergabe & Frame-Navigation</h2>
 <div class="videoWrap"><video id="v" playsinline controls preload="metadata"></video></div>
 <input id="scrub" class="scrub" type="range" min="0" max="1000" value="0">
 <div class="controls">
@@ -58,7 +75,7 @@ input[type=file]{position:absolute;left:-9999px}.scrub{width:100%;margin:12px 0}
 </section>
 
 <section class="card">
-<h2>3 · Videoinfo</h2>
+<h2>4 · Videoinfo</h2>
 <div class="info">
 <div><b id="time">0:00.000</b><span>Position</span></div>
 <div><b id="dur">0:00</b><span>Dauer</span></div>
@@ -69,14 +86,14 @@ input[type=file]{position:absolute;left:-9999px}.scrub{width:100%;margin:12px 0}
 </section>
 
 <section class="card">
-<h2>4 · Gangphasen · aktuellen Frame übernehmen</h2>
+<h2>5 · Gangphasen · aktuellen Frame übernehmen</h2>
 <p class="note">Video an der gewünschten Position anhalten und bei der passenden Phase auf „Frame übernehmen“ tippen. Ein erneuter Tipp ersetzt die bisherige Zuordnung.</p>
 <div id="phases" class="phases"></div>
 </section>
 </main>
 
 <script>
-const $=x=>document.getElementById(x),v=$('v'),s=$('scrub');let u='',fps=30;
+const $=x=>document.getElementById(x),v=$('v'),s=$('scrub');let u='',fps=30,currentVideoName='';
 const phaseNames=[
 'Initial Contact',
 'Loading Response',
@@ -96,6 +113,7 @@ function diag(t){$('diag').textContent='Diagnose: '+t}
 function load(f){
  if(!f){diag('Auswahl beendet, aber iPadOS hat keine Videodatei übergeben.');return}
  if(u)URL.revokeObjectURL(u);
+ currentVideoName=f.name||'iPad-Video';
  u=URL.createObjectURL(f);v.pause();v.src=u;v.load();
  saved.fill(null);renderPhases();
  $('status').textContent='Video wird vorbereitet: '+(f.name||'iPad-Video');$('status').className='status';
@@ -137,6 +155,81 @@ function renderPhases(){
  });
  box.querySelectorAll('button').forEach(b=>b.onclick=()=>capturePhase(Number(b.dataset.i)));
 }
+
+function safeStem(s){
+ return (s||'Fall')
+   .replace(/\.[^.]+$/,'')
+   .replace(/[^a-zA-Z0-9äöüÄÖÜß_-]+/g,'_')
+   .slice(0,60) || 'Fall';
+}
+
+function buildCase(){
+ return {
+   format:'RunAssist-GA-Case',
+   version:'0.5.4',
+   savedAt:new Date().toISOString(),
+   fps:fps,
+   videoName:currentVideoName,
+   phases:phaseNames.map((name,i)=>({
+     name:name,
+     time:saved[i]?.time ?? null,
+     frame:saved[i]?.frame ?? null,
+     image:saved[i]?.image ?? ''
+   }))
+ };
+}
+
+$('saveCase').onclick=()=>{
+ const data=buildCase();
+ const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement('a');
+ a.href=url;
+ a.download='RunAssist_'+safeStem(currentVideoName||'Fall')+'.runassist-ga';
+ document.body.appendChild(a);
+ a.click();
+ a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1200);
+ const count=saved.filter(Boolean).length;
+ $('caseStatus').textContent='Fall gespeichert · '+count+' von 9 Gangphasen';
+ $('caseStatus').className='status ok';
+};
+
+$('openCase').onchange=async e=>{
+ const f=e.target.files&&e.target.files[0];
+ if(!f)return;
+ try{
+   const data=JSON.parse(await f.text());
+   if(data.format!=='RunAssist-GA-Case' || !Array.isArray(data.phases)){
+     throw new Error('Keine gültige RunAssist-Ganganalyse-Falldatei.');
+   }
+   saved.fill(null);
+   data.phases.forEach((p,i)=>{
+     if(i>=saved.length)return;
+     if(p && (p.time!==null || p.frame!==null || p.image)){
+       saved[i]={
+         time:Number.isFinite(Number(p.time)) ? Number(p.time) : 0,
+         frame:Number.isFinite(Number(p.frame)) ? Number(p.frame) : 0,
+         image:p.image||''
+       };
+     }
+   });
+   currentVideoName=data.videoName||'';
+   renderPhases();
+   const count=saved.filter(Boolean).length;
+   $('caseStatus').textContent='Fall geöffnet · '+count+' von 9 Gangphasen'+(currentVideoName?' · Video: '+currentVideoName:'');
+   $('caseStatus').className='status ok';
+   if(currentVideoName){
+     $('status').textContent='Bitte zugehöriges Video erneut auswählen: '+currentVideoName;
+     $('status').className='status';
+   }
+ }catch(err){
+   $('caseStatus').textContent='Falldatei konnte nicht geöffnet werden: '+err.message;
+   $('caseStatus').className='status';
+ }
+ e.target.value='';
+};
+
 renderPhases();upd();
 </script>
 </body>
