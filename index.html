@@ -7,149 +7,137 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="RunAssist GA">
-<link rel="manifest" href="./manifest.webmanifest"
-  ><link rel="apple-touch-icon" href="./icon-512.png">
-<title>RunAssist GA iPad v0.5.2</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icon-512.png">
+<title>RunAssist GA iPad v0.5.3</title>
 <style>
 :root{--p:#168a82;--pd:#0d5f59;--soft:#eaf7f5;--line:#cfe0e1;--ink:#24383a;--muted:#6d7f82}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;background:#f3f7f7;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 header{background:#fff;border-bottom:1px solid var(--line);padding:14px 16px;position:sticky;top:0;z-index:5}
 .brand{display:flex;justify-content:space-between;align-items:center}.logo{font-size:24px;font-weight:800}.logo span{color:var(--p)}
-main{max-width:1000px;margin:auto;padding:14px}.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+main{max-width:1100px;margin:auto;padding:14px}.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
 h2{font-size:16px;color:var(--pd);margin:0 0 10px}.videoWrap{background:#111;border-radius:14px;overflow:hidden;aspect-ratio:16/9}
 video{width:100%;height:100%;object-fit:contain;background:#111}.controls{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:10px}
-button,.pick{min-height:56px;border:1px solid #b8cecf;border-radius:13px;background:#fff;font:inherit;font-weight:700;padding:10px;text-align:center}
+button,.pick{min-height:56px;border:1px solid #b8cecf;border-radius:13px;background:#fff;color:var(--ink);font:inherit;font-weight:700;padding:10px;text-align:center}
 .primary{background:var(--p)!important;color:#fff;border-color:var(--p)!important}.pick{display:flex;align-items:center;justify-content:center;cursor:pointer}
 input[type=file]{position:absolute;left:-9999px}.scrub{width:100%;margin:12px 0}.info{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .info div{background:var(--soft);border-radius:12px;padding:10px;text-align:center}.info b{display:block;color:var(--pd);font-size:18px}
 .info span,.note{font-size:10.5px;color:var(--muted)}.status{font-size:12px;padding:10px;border-radius:10px;background:#fff7df;margin-top:10px;line-height:1.4}
-.ok{background:#edf8ef}.diag{background:#eef5f7;color:#36565a}.install{background:#eef7ff;color:#31566e}
-@media(max-width:700px){.controls{grid-template-columns:repeat(3,1fr)}.info{grid-template-columns:1fr 1fr}}
+.ok{background:#edf8ef}.diag{background:#eef5f7;color:#36565a}
+.phases{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.phase{border:1px solid var(--line);border-radius:14px;padding:10px;background:#fbfdfd}
+.phase.done{background:var(--soft);border-color:#8fc8c3}.phaseTop{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.phase h3{font-size:13px;color:var(--pd);margin:0}.badge{font-size:10px;color:var(--muted);white-space:nowrap}
+.thumb{width:100%;aspect-ratio:16/9;background:#e9eeee;border-radius:10px;margin:8px 0;display:flex;align-items:center;justify-content:center;overflow:hidden;color:var(--muted);font-size:11px}
+.thumb img{width:100%;height:100%;object-fit:contain;background:#111}.phaseMeta{font-size:11px;color:var(--muted);min-height:16px;margin-bottom:7px}.phase button{width:100%;min-height:44px}
+@media(max-width:760px){.controls{grid-template-columns:repeat(3,1fr)}.info{grid-template-columns:1fr 1fr}.phases{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.phases{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-<header>
-  <div class="brand">
-    <div><div class="logo"><span>Run</span>Assist</div><div class="note">GA · iPad PWA v0.5.2</div></div>
-    <div class="note">Video-Kerntest</div>
-  </div>
-</header>
+<header><div class="brand"><div><div class="logo"><span>Run</span>Assist</div><div class="note">GA · iPad PWA v0.5.3</div></div><div class="note">Gangphasen & Frames</div></div></header>
 <main>
 <section class="card">
-  <h2>1 · Gangvideo</h2>
-  <div class="controls" style="grid-template-columns:1fr 1fr">
-    <label class="pick primary" for="file">🎞️ Aus Fotomediathek / Dateien</label>
-    <label class="pick" for="camera">📷 Video aufnehmen</label>
-    <input id="file" type="file" accept="video/*">
-    <input id="camera" type="file" accept="video/*" capture="environment">
-  </div>
-  <div id="status" class="status">Bitte ein Video aus der Fotomediathek/Dateien auswählen oder direkt aufnehmen.</div>
-  <div id="diag" class="status diag">Diagnose: Noch keine Datei übergeben.</div>
-  <div class="status install">iPad-Tipp: In Safari über <b>Teilen → Zum Home-Bildschirm</b> installieren. Danach startet RunAssist wie eine App.</div>
+<h2>1 · Gangvideo</h2>
+<div class="controls" style="grid-template-columns:1fr 1fr">
+<label class="pick primary" for="file">🎞️ Aus Fotomediathek / Dateien</label>
+<label class="pick" for="camera">📷 Video aufnehmen</label>
+<input id="file" type="file" accept="video/*"><input id="camera" type="file" accept="video/*" capture="environment">
+</div>
+<div id="status" class="status">Bitte ein Video auswählen oder direkt aufnehmen.</div>
+<div id="diag" class="status diag">Diagnose: Noch keine Datei übergeben.</div>
 </section>
 
 <section class="card">
-  <h2>2 · Wiedergabe & Frame-Navigation</h2>
-  <div class="videoWrap"><video id="v" playsinline controls preload="metadata"></video></div>
-  <input id="scrub" class="scrub" type="range" min="0" max="1000" value="0">
-  <div class="controls">
-    <button id="b10">⏪ −10</button>
-    <button id="b1">◀ 1 Frame</button>
-    <button id="play" class="primary">▶ Play</button>
-    <button id="f1">1 Frame ▶</button>
-    <button id="f10">+10 ⏩</button>
-  </div>
+<h2>2 · Wiedergabe & Frame-Navigation</h2>
+<div class="videoWrap"><video id="v" playsinline controls preload="metadata"></video></div>
+<input id="scrub" class="scrub" type="range" min="0" max="1000" value="0">
+<div class="controls">
+<button id="b10">⏪ −10</button><button id="b1">◀ 1 Frame</button><button id="play" class="primary">▶ Play</button><button id="f1">1 Frame ▶</button><button id="f10">+10 ⏩</button>
+</div>
 </section>
 
 <section class="card">
-  <h2>3 · Videoinfo</h2>
-  <div class="info">
-    <div><b id="time">0:00.000</b><span>Position</span></div>
-    <div><b id="dur">0:00</b><span>Dauer</span></div>
-    <div><b>30</b><span>Arbeits-FPS*</span></div>
-    <div><b id="frame">0</b><span>Frame*</span></div>
-  </div>
-  <p class="note">* Diese Stufe testet ausschließlich den iPad-Kern: Video aus Fotos/Dateien übernehmen, Bild anzeigen, abspielen und schrittweise navigieren. Exakte FPS-Erkennung und die Gangphasenlogik ziehen wir erst nach einem erfolgreichen iPad-Test nach.</p>
+<h2>3 · Videoinfo</h2>
+<div class="info">
+<div><b id="time">0:00.000</b><span>Position</span></div>
+<div><b id="dur">0:00</b><span>Dauer</span></div>
+<div><b>30</b><span>Arbeits-FPS*</span></div>
+<div><b id="frame">0</b><span>Frame*</span></div>
+</div>
+<p class="note">* 30 FPS bleiben in diesem Test zunächst das Navigationsraster. Jede Gangphase speichert Zeitposition, Arbeits-Frame und ein Vorschaubild.</p>
+</section>
+
+<section class="card">
+<h2>4 · Gangphasen · aktuellen Frame übernehmen</h2>
+<p class="note">Video an der gewünschten Position anhalten und bei der passenden Phase auf „Frame übernehmen“ tippen. Ein erneuter Tipp ersetzt die bisherige Zuordnung.</p>
+<div id="phases" class="phases"></div>
 </section>
 </main>
 
 <script>
-const $=x=>document.getElementById(x),v=$('v'),s=$('scrub');
-let u='',fps=30;
+const $=x=>document.getElementById(x),v=$('v'),s=$('scrub');let u='',fps=30;
+const phaseNames=[
+'Initial Contact',
+'Loading Response',
+'Early Mid Stance',
+'Late Mid Stance',
+'Terminal Stance',
+'Pre-Swing',
+'Initial Swing',
+'Mid Swing',
+'Terminal Swing'
+];
+const saved=Array(phaseNames.length).fill(null);
 
-function fmt(t,ms){
-  if(!isFinite(t))return '0:00';
-  const m=Math.floor(t/60),x=t-m*60;
-  return m+':'+x.toFixed(ms?3:0).padStart(ms?6:2,'0');
-}
-function upd(){
-  $('time').textContent=fmt(v.currentTime,true);
-  $('dur').textContent=fmt(v.duration||0,false);
-  $('frame').textContent=Math.round(v.currentTime*fps);
-  if(v.duration)s.value=Math.round(v.currentTime/v.duration*1000);
-}
+function fmt(t,ms){if(!isFinite(t))return'0:00';const m=Math.floor(t/60),x=t-m*60;return m+':'+x.toFixed(ms?3:0).padStart(ms?6:2,'0')}
+function upd(){$('time').textContent=fmt(v.currentTime,true);$('dur').textContent=fmt(v.duration||0,false);$('frame').textContent=Math.round(v.currentTime*fps);if(v.duration)s.value=Math.round(v.currentTime/v.duration*1000)}
 function diag(t){$('diag').textContent='Diagnose: '+t}
 function load(f){
-  if(!f){diag('Auswahl beendet, aber iPadOS hat keine Videodatei übergeben.');return}
-  if(u)URL.revokeObjectURL(u);
-  diag('Datei erhalten · '+(f.name||'ohne Namen')+' · Typ: '+(f.type||'unbekannt')+' · '+(f.size/1048576).toFixed(1)+' MB');
-  u=URL.createObjectURL(f);
-  v.pause();
-  v.src=u;
-  v.load();
-  $('status').textContent='Video wird vorbereitet: '+(f.name||'iPad-Video');
-  $('status').className='status';
+ if(!f){diag('Auswahl beendet, aber iPadOS hat keine Videodatei übergeben.');return}
+ if(u)URL.revokeObjectURL(u);
+ u=URL.createObjectURL(f);v.pause();v.src=u;v.load();
+ saved.fill(null);renderPhases();
+ $('status').textContent='Video wird vorbereitet: '+(f.name||'iPad-Video');$('status').className='status';
+ diag('Datei erhalten · '+(f.name||'ohne Namen')+' · '+(f.size/1048576).toFixed(1)+' MB');
 }
 $('file').addEventListener('change',e=>load(e.target.files&&e.target.files[0]));
 $('camera').addEventListener('change',e=>load(e.target.files&&e.target.files[0]));
-
-v.onloadedmetadata=()=>{
-  upd();
-  $('status').textContent='Video bereit · '+fmt(v.duration||0,false);
-  $('status').className='status ok';
-  diag('Metadaten gelesen. Safari kann den Videocontainer öffnen.');
-};
-v.onloadeddata=()=>diag('Erstes Videobild dekodiert – Bildwiedergabe funktioniert.');
-v.oncanplay=()=>diag('Video ist abspielbereit.');
-v.onerror=()=>{
-  const e=v.error;
-  diag(e?'MediaError '+e.code+(e.message?' · '+e.message:''):'unbekannter Medienfehler');
-  $('status').textContent='Video konnte auf diesem iPad nicht wiedergegeben werden.';
-  $('status').className='status';
-};
-v.ontimeupdate=upd;
-v.onseeked=upd;
-
-$('play').onclick=()=>{
-  if(v.paused){
-    v.play().then(()=>$('play').textContent='⏸ Pause').catch(err=>diag('Play-Fehler: '+err.message));
-  }else v.pause();
-};
+v.onloadedmetadata=()=>{upd();$('status').textContent='Video bereit · '+fmt(v.duration||0,false);$('status').className='status ok';diag('Metadaten gelesen.')};
+v.onloadeddata=()=>diag('Erstes Videobild dekodiert – bereit zur Gangphasen-Zuordnung.');
+v.onerror=()=>{const e=v.error;diag(e?'MediaError '+e.code:'unbekannter Medienfehler');$('status').textContent='Video konnte nicht wiedergegeben werden.'};
+v.ontimeupdate=upd;v.onseeked=upd;
+$('play').onclick=()=>{if(v.paused){v.play().then(()=>$('play').textContent='⏸ Pause').catch(err=>diag('Play-Fehler: '+err.message))}else v.pause()};
 v.onpause=()=>$('play').textContent='▶ Play';
+function step(n){v.pause();v.currentTime=Math.max(0,Math.min(v.duration||Infinity,v.currentTime+n/fps));upd()}
+$('b1').onclick=()=>step(-1);$('f1').onclick=()=>step(1);$('b10').onclick=()=>step(-10);$('f10').onclick=()=>step(10);
+s.oninput=()=>{if(v.duration){v.pause();v.currentTime=s.value/1000*v.duration;upd()}};
 
-function step(n){
-  v.pause();
-  const next=Math.max(0,Math.min(v.duration||Infinity,v.currentTime+n/fps));
-  v.currentTime=next;
-  upd();
+function snapshot(){
+ const c=document.createElement('canvas');
+ c.width=v.videoWidth||640;c.height=v.videoHeight||360;
+ try{c.getContext('2d').drawImage(v,0,0,c.width,c.height);return c.toDataURL('image/jpeg',0.72)}catch(e){return ''}
 }
-$('b1').onclick=()=>step(-1);
-$('f1').onclick=()=>step(1);
-$('b10').onclick=()=>step(-10);
-$('f10').onclick=()=>step(10);
-s.oninput=()=>{
-  if(v.duration){
-    v.pause();
-    v.currentTime=s.value/1000*v.duration;
-    upd();
-  }
-};
-
-if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+function capturePhase(i){
+ if(!v.src||!isFinite(v.duration)){diag('Bitte zuerst ein Video laden.');return}
+ v.pause();
+ saved[i]={time:v.currentTime,frame:Math.round(v.currentTime*fps),image:snapshot()};
+ renderPhases();
 }
-upd();
+function renderPhases(){
+ const box=$('phases');box.innerHTML='';
+ phaseNames.forEach((name,i)=>{
+   const x=saved[i],d=document.createElement('div');d.className='phase'+(x?' done':'');
+   d.innerHTML=
+   '<div class="phaseTop"><h3>'+(i+1)+' · '+name+'</h3><span class="badge">'+(x?'✓ gespeichert':'offen')+'</span></div>'+
+   '<div class="thumb">'+(x&&x.image?'<img alt="Frame-Vorschau" src="'+x.image+'">':'Noch kein Frame')+'</div>'+
+   '<div class="phaseMeta">'+(x?('Zeit '+fmt(x.time,true)+' · Frame '+x.frame):'')+'</div>'+
+   '<button class="'+(x?'':'primary')+'" data-i="'+i+'">'+(x?'Frame ersetzen':'Frame übernehmen')+'</button>';
+   box.appendChild(d);
+ });
+ box.querySelectorAll('button').forEach(b=>b.onclick=()=>capturePhase(Number(b.dataset.i)));
+}
+renderPhases();upd();
 </script>
 </body>
 </html>
