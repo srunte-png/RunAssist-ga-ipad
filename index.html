@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="RunAssist GA">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon-512.png">
-<title>RunAssist GA iPad v0.6.3</title>
+<title>RunAssist GA iPad v0.7.0</title>
 <style>
 :root{--p:#168a82;--pd:#0d5f59;--soft:#eaf7f5;--line:#cfe0e1;--ink:#24383a;--muted:#6d7f82}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -73,10 +73,22 @@ input[type=file]{position:absolute;left:-9999px}.scrub{width:100%;margin:12px 0}
 
 #icLoupe{position:absolute;z-index:5;width:150px;height:150px;border:3px solid #fff;border-radius:50%;box-shadow:0 3px 16px rgba(0,0,0,.38);background:#111;pointer-events:none;display:none}
 #icLoupeCross{position:absolute;z-index:6;width:150px;height:150px;pointer-events:none;display:none}
+
+.autoBox{background:#f7fbfb;border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px}
+.autoActions{display:grid;grid-template-columns:1.3fr .7fr;gap:8px}
+.autoStatus{font-size:11px;line-height:1.45;margin-top:8px;padding:9px;border-radius:10px;background:#eef5f7;color:#36565a}
+.autoLegend{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:10.5px;color:var(--muted)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;vertical-align:-1px}
+.dot.high{background:#2f8b57}.dot.mid{background:#c38620}.dot.low{background:#b24444}
+.confList{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px}
+.confCell{border:1px solid var(--line);border-radius:9px;padding:7px;text-align:center;font-size:10px;background:#fff}
+.confCell b{display:block;font-size:12px;color:var(--pd)}
+@media(max-width:700px){.autoActions{grid-template-columns:1fr}.confList{grid-template-columns:repeat(2,1fr)}}
+
 </style>
 </head>
 <body>
-<header><div class="brand"><div><div class="logo"><span>Run</span>Assist</div><div class="note">GA · iPad PWA v0.6.3</div></div><div class="note">IC · Präzisionslupe</div></div></header>
+<header><div class="brand"><div><div class="logo"><span>Run</span>Assist</div><div class="note">GA · iPad PWA v0.7.0</div></div><div class="note">IC · Auto-Referenzpunkte</div></div></header>
 <main>
 
 <section class="card">
@@ -127,6 +139,31 @@ input[type=file]{position:absolute;left:-9999px}.scrub{width:100%;margin:12px 0}
 <div id="phases" class="phases"></div>
 </section>
 
+
+<section class="card">
+<h2>6 · Initial Contact · automatische Referenzpunkt-Vorschläge</h2>
+<div class="autoBox">
+  <div class="autoActions">
+    <button id="autoPose" class="primary">✨ Referenzpunkte automatisch vorschlagen</button>
+    <button id="autoClear">↺ Vorschläge verwerfen</button>
+  </div>
+  <div id="autoStatus" class="autoStatus">Noch keine automatische Erkennung durchgeführt. Das Pose-Modell wird erst beim ersten Start geladen.</div>
+  <div class="confList">
+    <div class="confCell"><b id="confShoulder">—</b>Schulter</div>
+    <div class="confCell"><b id="confHip">—</b>Hüfte</div>
+    <div class="confCell"><b id="confKnee">—</b>Knie</div>
+    <div class="confCell"><b id="confAnkle">—</b>Sprunggelenk</div>
+    <div class="confCell"><b id="confFoot">—</b>Vorfuß</div>
+  </div>
+  <div class="autoLegend">
+    <span><i class="dot high"></i>hoch ≥75%</span>
+    <span><i class="dot mid"></i>mittel 50–74%</span>
+    <span><i class="dot low"></i>niedrig &lt;50% · bitte prüfen</span>
+  </div>
+  <p class="note" style="margin-bottom:0">Die Automatik ist nur ein Vorschlag. Die klinische Freigabe bleibt beim Untersucher. SIAS/SIPS werden nicht automatisch gesetzt.</p>
+</div>
+</section>
+
 <section class="card">
 <h2>6 · Initial Contact · Winkelanalyse (Pilot)</h2>
 <p class="note"><b>Referenzbein = immer das Bein auf der gefilmten Kameraseite.</b> Setze die anatomischen Referenzpunkte selbst. RunAssist berechnet erst nach vollständiger Markierung die bildbasierten 2D-Winkel.</p>
@@ -135,6 +172,10 @@ input[type=file]{position:absolute;left:-9999px}.scrub{width:100%;margin:12px 0}
 <div id="icMode" class="status diag" style="margin:0 0 8px">Bildmodus · Doppeltippen, um den nächsten Referenzpunkt zu setzen.</div>
 <div id="icStage" class="icStage"><div id="icEmpty" class="note" style="color:#dfe8e8;padding:20px;text-align:center">Noch kein Initial-Contact-Frame gespeichert.</div><img id="icImage" alt="Initial Contact" hidden><canvas id="icCanvas"></canvas><canvas id="icLoupe" width="300" height="300"></canvas><canvas id="icLoupeCross" width="300" height="300"></canvas></div>
 <div class="precisionNote"><b>iPad-Steuerung:</b> 1 Finger ziehen = Bild verschieben · 2 Finger = zoomen · Doppeltipp = nächsten Referenzpunkt aktivieren · danach 1× tippen = Punkt setzen.</div>
+
+<div class="icActions" style="margin-top:8px">
+  <button id="correctAutoPoint">🎯 Referenzpunkt korrigieren</button>
+</div>
 <div class="icActions" style="margin-top:8px"><button id="icReset">↺ Referenzpunkte neu setzen</button><button id="icUndo">← Letzten Punkt löschen</button><button id="icLoadFrame" class="primary">IC-Frame aktualisieren</button></div>
 </div>
 <div class="icTools">
@@ -198,6 +239,33 @@ input[type=file]{position:absolute;left:-9999px}.scrub{width:100%;margin:12px 0}
 </main>
 
 <script>
+
+let poseLandmarker=null,poseModelLoading=null,autoConfidence={};
+async function ensurePoseModel(){
+ if(poseLandmarker)return poseLandmarker;
+ if(poseModelLoading)return poseModelLoading;
+ poseModelLoading=(async()=>{
+   const vision=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/+esm');
+   const fileset=await vision.FilesetResolver.forVisionTasks(
+     'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/wasm'
+   );
+   poseLandmarker=await vision.PoseLandmarker.createFromOptions(fileset,{
+     baseOptions:{
+       modelAssetPath:'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/latest/pose_landmarker_lite.task',
+       delegate:'CPU'
+     },
+     runningMode:'IMAGE',
+     numPoses:1,
+     minPoseDetectionConfidence:0.45,
+     minPosePresenceConfidence:0.45,
+     minTrackingConfidence:0.45
+   });
+   return poseLandmarker;
+ })();
+ try{return await poseModelLoading}
+ catch(e){poseModelLoading=null;throw e}
+}
+
 const $=x=>document.getElementById(x),v=$('v'),s=$('scrub');let u='',fps=30,currentVideoName='';
 const phaseNames=[
 'Initial Contact',
@@ -405,7 +473,7 @@ $('icReset').onclick=resetIcPoints;$('icUndo').onclick=()=>{
 };$('icLoadFrame').onclick=loadIcFrame;window.addEventListener('resize',()=>{resizeIc();applyView()});
 
 
-// ---- v0.6.3 · SIAS/SIPS Referenzpunkte + Beckenmessung ----
+// ---- v0.7.0 · SIAS/SIPS Referenzpunkte + Beckenmessung ----
 function pelvisName(){return pelvisSetIndex===0?'SIAS':'SIPS'}
 function axisAngle(a,b){return Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI}
 function norm180(a){while(a>180)a-=360;while(a<-180)a+=360;return a}
@@ -537,7 +605,7 @@ updateIcPrompt=function(){
   if(setIndex>=5)updatePelvisUI();
 };
 
-// ---- v0.6.3 · Initial Contact Befund & Interpretation ----
+// ---- v0.7.0 · Initial Contact Befund & Interpretation ----
 const icQualIds=['qHeel','qForefoot','qPelvisDrop','qPelvisRot','qTrunkLean','qStepLength'];
 
 function currentIcMeasures(){
@@ -620,6 +688,124 @@ buildCase = function(){
   };
   return data;
 };
+
+// ---- v0.7.0 · automatische Referenzpunkt-Vorschläge ----
+function confPct(v){return Number.isFinite(v)?Math.round(v*100)+'%':'—'}
+function confClass(v){return v>=.75?'high':v>=.5?'mid':'low'}
+function setConf(id,v){
+ const el=$(id);el.textContent=confPct(v);
+ el.style.color=v>=.75?'#2f8b57':v>=.5?'#a46a0d':'#a33434';
+}
+function clearAutoConfidence(){
+ autoConfidence={};
+ ['confShoulder','confHip','confKnee','confAnkle','confFoot'].forEach(id=>$(id).textContent='—');
+}
+function lmScore(lms,ids){
+ const vals=ids.map(i=>Number(lms[i]?.visibility ?? lms[i]?.presence ?? 0));
+ return vals.reduce((a,b)=>a+b,0)/Math.max(1,vals.length);
+}
+function chooseCameraSide(lms){
+ const left=[11,23,25,27,31], right=[12,24,26,28,32];
+ return lmScore(lms,left)>=lmScore(lms,right)?'left':'right';
+}
+function proposalFromLandmarks(lms,side){
+ const ids=side==='left'
+   ? {shoulder:11,hip:23,knee:25,ankle:27,forefoot:31}
+   : {shoulder:12,hip:24,knee:26,ankle:28,forefoot:32};
+ const out={},confidence={};
+ Object.entries(ids).forEach(([k,i])=>{
+   const p=lms[i];
+   if(p){out[k]={x:Math.max(0,Math.min(1,p.x)),y:Math.max(0,Math.min(1,p.y))};confidence[k]=Number(p.visibility ?? p.presence ?? 0)}
+ });
+ return {out,confidence};
+}
+async function runAutoPose(){
+ const ic=saved[0];
+ if(!ic||!ic.image){
+   $('autoStatus').textContent='Bitte zuerst einen Initial-Contact-Frame übernehmen.';
+   return;
+ }
+ $('autoPose').disabled=true;
+ $('autoStatus').textContent='Pose-Modell wird geladen … beim ersten Mal kann das einige Sekunden dauern.';
+ try{
+   const model=await ensurePoseModel();
+   const img=new Image();
+   img.src=ic.image;
+   await img.decode();
+   $('autoStatus').textContent='IC-Frame wird lokal auf dem iPad analysiert …';
+   const result=model.detect(img);
+   const lms=result?.landmarks?.[0];
+   if(!lms)throw new Error('Keine Person sicher erkannt');
+   const side=chooseCameraSide(lms);
+   const {out,confidence}=proposalFromLandmarks(lms,side);
+   if(Object.keys(out).length<4)throw new Error('Zu wenige Referenzpunkte erkannt');
+
+   // Keep SIAS/SIPS if the therapist already set them manually.
+   const sias=icPts.sias,sips=icPts.sips;
+   icPts={...out};
+   if(sias)icPts.sias=sias;if(sips)icPts.sips=sips;
+   setIndex=5;
+   pointArmed=false;
+   autoConfidence=confidence;
+
+   setConf('confShoulder',confidence.shoulder);
+   setConf('confHip',confidence.hip);
+   setConf('confKnee',confidence.knee);
+   setConf('confAnkle',confidence.ankle);
+   setConf('confFoot',confidence.forefoot);
+
+   const avg=Object.values(confidence).reduce((a,b)=>a+b,0)/Math.max(1,Object.values(confidence).length);
+   $('autoStatus').textContent='Vorschlag erstellt · kameraseitige Pose automatisch als '+(side==='left'?'linke':'rechte')+' Modellseite gewählt · mittlere Sicherheit '+Math.round(avg*100)+'%. Bitte Punkte fachlich prüfen.';
+   if(typeof updateIcPrompt==='function')updateIcPrompt();
+   if(typeof updatePelvisUI==='function')updatePelvisUI();
+   drawIc();
+ }catch(err){
+   $('autoStatus').textContent='Automatische Erkennung nicht verfügbar: '+(err?.message||err)+'. Die manuelle Messung bleibt vollständig nutzbar.';
+ }finally{
+   $('autoPose').disabled=false;
+ }
+}
+$('autoPose').onclick=runAutoPose;
+$('autoClear').onclick=()=>{
+ clearAutoConfidence();
+ $('autoStatus').textContent='Automatische Vorschläge verworfen. Referenzpunkte können wieder manuell gesetzt werden.';
+ resetIcPoints();
+};
+
+// Store confidence metadata with the case, but never treat it as a clinical measurement.
+if(typeof buildCase==='function'){
+ const buildCase_v070=buildCase;
+ buildCase=function(){
+   const data=buildCase_v070();
+   data.autoPose={confidence:autoConfidence||{}};
+   return data;
+ };
+}
+
+let correctionIndex=0;
+if($('correctAutoPoint')){
+ $('correctAutoPoint').onclick=()=>{
+   const k=icKeys[correctionIndex%icKeys.length];
+   // Remove only this point, arm placement for the same anatomical target.
+   delete icPts[k];
+   const originalSetIndex=setIndex;
+   setIndex=icKeys.indexOf(k);
+   pointArmed=true;
+   $('icMode').textContent='🎯 Korrektur: '+icNames[k]+' · Finger auflegen, mit Lupe fein positionieren und loslassen.';
+   const once=()=>{
+     if(icPts[k]){
+       setIndex=5;
+       correctionIndex=(correctionIndex+1)%icKeys.length;
+       $('correctAutoPoint').textContent='🎯 Nächsten Punkt korrigieren: '+icNames[icKeys[correctionIndex]];
+       icCanvas.removeEventListener('pointerup',once);
+     }
+   };
+   icCanvas.addEventListener('pointerup',once);
+   drawIc();
+ };
+ $('correctAutoPoint').textContent='🎯 Referenzpunkt korrigieren: Schulter';
+}
+
 
 renderPhases();upd();loadIcFrame();
 </script>
