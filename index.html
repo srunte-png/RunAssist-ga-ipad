@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="RunAssist GA">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon-512.png">
-<title>RunAssist GA iPad v0.6.2</title>
+<title>RunAssist GA iPad v0.6.3</title>
 <style>
 :root{--p:#168a82;--pd:#0d5f59;--soft:#eaf7f5;--line:#cfe0e1;--ink:#24383a;--muted:#6d7f82}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -70,10 +70,13 @@ input[type=file]{position:absolute;left:-9999px}.scrub{width:100%;margin:12px 0}
 .icReportActions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
 @media(max-width:700px){.icQual{grid-template-columns:1fr}.icReportActions{grid-template-columns:1fr}}
 
+
+#icLoupe{position:absolute;z-index:5;width:150px;height:150px;border:3px solid #fff;border-radius:50%;box-shadow:0 3px 16px rgba(0,0,0,.38);background:#111;pointer-events:none;display:none}
+#icLoupeCross{position:absolute;z-index:6;width:150px;height:150px;pointer-events:none;display:none}
 </style>
 </head>
 <body>
-<header><div class="brand"><div><div class="logo"><span>Run</span>Assist</div><div class="note">GA · iPad PWA v0.6.2</div></div><div class="note">IC · SIAS/SIPS Fix</div></div></header>
+<header><div class="brand"><div><div class="logo"><span>Run</span>Assist</div><div class="note">GA · iPad PWA v0.6.3</div></div><div class="note">IC · Präzisionslupe</div></div></header>
 <main>
 
 <section class="card">
@@ -130,7 +133,7 @@ input[type=file]{position:absolute;left:-9999px}.scrub{width:100%;margin:12px 0}
 <div class="icGrid">
 <div>
 <div id="icMode" class="status diag" style="margin:0 0 8px">Bildmodus · Doppeltippen, um den nächsten Referenzpunkt zu setzen.</div>
-<div id="icStage" class="icStage"><div id="icEmpty" class="note" style="color:#dfe8e8;padding:20px;text-align:center">Noch kein Initial-Contact-Frame gespeichert.</div><img id="icImage" alt="Initial Contact" hidden><canvas id="icCanvas"></canvas></div>
+<div id="icStage" class="icStage"><div id="icEmpty" class="note" style="color:#dfe8e8;padding:20px;text-align:center">Noch kein Initial-Contact-Frame gespeichert.</div><img id="icImage" alt="Initial Contact" hidden><canvas id="icCanvas"></canvas><canvas id="icLoupe" width="300" height="300"></canvas><canvas id="icLoupeCross" width="300" height="300"></canvas></div>
 <div class="precisionNote"><b>iPad-Steuerung:</b> 1 Finger ziehen = Bild verschieben · 2 Finger = zoomen · Doppeltipp = nächsten Referenzpunkt aktivieren · danach 1× tippen = Punkt setzen.</div>
 <div class="icActions" style="margin-top:8px"><button id="icReset">↺ Referenzpunkte neu setzen</button><button id="icUndo">← Letzten Punkt löschen</button><button id="icLoadFrame" class="primary">IC-Frame aktualisieren</button></div>
 </div>
@@ -365,19 +368,44 @@ function screenToImage(x,y){const b=baseImageRect();return{x:Math.max(0,Math.min
 function angleABC(a,b,c){const u={x:a.x-b.x,y:a.y-b.y},w={x:c.x-b.x,y:c.y-b.y},d=u.x*w.x+u.y*w.y,n=Math.hypot(u.x,u.y)*Math.hypot(w.x,w.y);return Math.acos(Math.max(-1,Math.min(1,d/n)))*180/Math.PI}
 function calcIc(){if(!icKeys.every(k=>icPts[k]))return null;const p={};icKeys.forEach(k=>p[k]=imageToScreen(icPts[k]));return{hip:Math.max(0,180-angleABC(p.shoulder,p.hip,p.knee)),knee:Math.max(0,180-angleABC(p.hip,p.knee,p.ankle)),ankle:90-angleABC(p.knee,p.ankle,p.forefoot)}}
 function classify(v,lo,hi,label){if(v<lo)return{text:(lo-v).toFixed(1)+'° unter Referenz · '+label+' vermindert',cls:'warn'};if(v>hi)return{text:(v-hi).toFixed(1)+'° über Referenz · '+label+' vermehrt',cls:'warn'};return{text:'im Orientierungsbereich',cls:'good'}}
-function drawIc(){const r=icStage.getBoundingClientRect();icCtx.clearRect(0,0,r.width,r.height);const keys=[...icKeys,'sias','sips'].filter(k=>icPts[k]),p={};keys.forEach(k=>p[k]=imageToScreen(icPts[k]));if(keys.length>1){icCtx.strokeStyle='rgba(255,255,255,.88)';icCtx.lineWidth=1.7;icCtx.beginPath();icCtx.moveTo(p[keys[0]].x,p[keys[0]].y);keys.slice(1).forEach(k=>icCtx.lineTo(p[k].x,p[k].y));icCtx.stroke()}keys.forEach(k=>{const q=p[k];icCtx.beginPath();icCtx.fillStyle='rgba(22,138,130,.65)';icCtx.arc(q.x,q.y,6,0,Math.PI*2);icCtx.fill();icCtx.strokeStyle='white';icCtx.lineWidth=1;icCtx.stroke();icCtx.beginPath();icCtx.moveTo(q.x-10,q.y);icCtx.lineTo(q.x+10,q.y);icCtx.moveTo(q.x,q.y-10);icCtx.lineTo(q.x,q.y+10);icCtx.stroke();icCtx.fillStyle='white';icCtx.font='bold 8px -apple-system';icCtx.textAlign='center';icCtx.fillText(icLabels[k],q.x,q.y-13)});const m=calcIc();if(!m){clearIcMeasurements();return}$('hipVal').textContent=m.hip.toFixed(1)+'°';$('kneeVal').textContent=m.knee.toFixed(1)+'°';$('ankleVal').textContent=(m.ankle>=0?'+':'')+m.ankle.toFixed(1)+'°';const es=[['hipEval',classify(m.hip,20,30,'Hüftflexion')],['kneeEval',classify(m.knee,0,10,'Knieflexion')],['ankleEval',classify(m.ankle,0,5,'Dorsalextension')]];es.forEach(([id,e])=>{$(id).textContent=e.text;$(id).className='eval '+e.cls});const f=[];if(m.hip<20)f.push('verminderte Hüftflexion');else if(m.hip>30)f.push('vermehrte Hüftflexion');if(m.knee>10)f.push('vermehrte Knieflexion');if(m.ankle<0)f.push('OSG plantarflexierter als Orientierung');else if(m.ankle>5)f.push('vermehrte OSG-Dorsalextension');$('icFinding').textContent=f.length?'IC · kameraseitiges Referenzbein: '+f.join(' · '):'IC · kameraseitiges Referenzbein: gemessene Pilotwerte im Orientierungsbereich.'}
+function drawIc(){const r=icStage.getBoundingClientRect();icCtx.clearRect(0,0,r.width,r.height);const keys=icKeys.filter(k=>icPts[k]),p={};keys.forEach(k=>p[k]=imageToScreen(icPts[k]));if(keys.length>1){icCtx.strokeStyle='rgba(255,255,255,.88)';icCtx.lineWidth=1.7;icCtx.beginPath();icCtx.moveTo(p[keys[0]].x,p[keys[0]].y);keys.slice(1).forEach(k=>icCtx.lineTo(p[k].x,p[k].y));icCtx.stroke()}keys.forEach(k=>{const q=p[k];icCtx.beginPath();icCtx.fillStyle='rgba(22,138,130,.65)';icCtx.arc(q.x,q.y,6,0,Math.PI*2);icCtx.fill();icCtx.strokeStyle='white';icCtx.lineWidth=1;icCtx.stroke();icCtx.beginPath();icCtx.moveTo(q.x-10,q.y);icCtx.lineTo(q.x+10,q.y);icCtx.moveTo(q.x,q.y-10);icCtx.lineTo(q.x,q.y+10);icCtx.stroke();icCtx.fillStyle='white';icCtx.font='bold 8px -apple-system';icCtx.textAlign='center';icCtx.fillText(icLabels[k],q.x,q.y-13)});const m=calcIc();if(!m){clearIcMeasurements();return}$('hipVal').textContent=m.hip.toFixed(1)+'°';$('kneeVal').textContent=m.knee.toFixed(1)+'°';$('ankleVal').textContent=(m.ankle>=0?'+':'')+m.ankle.toFixed(1)+'°';const es=[['hipEval',classify(m.hip,20,30,'Hüftflexion')],['kneeEval',classify(m.knee,0,10,'Knieflexion')],['ankleEval',classify(m.ankle,0,5,'Dorsalextension')]];es.forEach(([id,e])=>{$(id).textContent=e.text;$(id).className='eval '+e.cls});const f=[];if(m.hip<20)f.push('verminderte Hüftflexion');else if(m.hip>30)f.push('vermehrte Hüftflexion');if(m.knee>10)f.push('vermehrte Knieflexion');if(m.ankle<0)f.push('OSG plantarflexierter als Orientierung');else if(m.ankle>5)f.push('vermehrte OSG-Dorsalextension');$('icFinding').textContent=f.length?'IC · kameraseitiges Referenzbein: '+f.join(' · '):'IC · kameraseitiges Referenzbein: gemessene Pilotwerte im Orientierungsbereich.'}
 function xy(e){const r=icStage.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}function dst(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}function mid(a,b){return{x:(a.x+b.x)/2,y:(a.y+b.y)/2}}
 function beginGesture(){const a=[...touches.values()];if(a.length<2)return;const m=mid(a[0],a[1]),b=baseImageRect();gesture={d:dst(a[0],a[1]),z:icZoom,ax:(m.x-b.x-icPanX)/(b.w*icZoom),ay:(m.y-b.y-icPanY)/(b.h*icZoom)};panStart=null;moved=true}
 function armPoint(){if(setIndex>=5)return;pointArmed=true;updateMode()}
 function placePoint(q){if(!pointArmed||setIndex>=5)return;icPts[icKeys[setIndex]]=screenToImage(q.x,q.y);setIndex++;pointArmed=false;updateIcPrompt();drawIc()}
-icCanvas.addEventListener('pointerdown',e=>{if(icImg.hidden)return;const q=xy(e);touches.set(e.pointerId,q);icCanvas.setPointerCapture(e.pointerId);moved=false;if(touches.size>=2){if(pendingTap){clearTimeout(pendingTap);pendingTap=null}beginGesture();e.preventDefault();return}panStart={x:q.x,y:q.y,px:icPanX,py:icPanY};e.preventDefault()});
-icCanvas.addEventListener('pointermove',e=>{if(!touches.has(e.pointerId))return;const q=xy(e);touches.set(e.pointerId,q);if(touches.size>=2){if(!gesture)beginGesture();const a=[...touches.values()],m=mid(a[0],a[1]),b=baseImageRect();icZoom=Math.max(1,Math.min(4,gesture.z*dst(a[0],a[1])/Math.max(1,gesture.d)));icPanX=m.x-b.x-gesture.ax*b.w*icZoom;icPanY=m.y-b.y-gesture.ay*b.h*icZoom;if(icZoom<=1.001){icZoom=1;icPanX=icPanY=0}applyView();e.preventDefault();return}if(panStart&&dst(q,{x:panStart.x,y:panStart.y})>5){moved=true;icPanX=panStart.px+(q.x-panStart.x);icPanY=panStart.py+(q.y-panStart.y);applyView();e.preventDefault()}});
-icCanvas.addEventListener('pointerup',e=>{const q=xy(e),wasMoved=moved;touches.delete(e.pointerId);if(touches.size<2)gesture=null;if(!touches.size)panStart=null;if(wasMoved)return;const now=Date.now();if(pointArmed){placePoint(q);lastTap=0;return}if(now-lastTap<320){if(pendingTap){clearTimeout(pendingTap);pendingTap=null}lastTap=0;armPoint();return}lastTap=now;pendingTap=setTimeout(()=>{pendingTap=null},340)});
-icCanvas.addEventListener('pointercancel',e=>{touches.delete(e.pointerId);gesture=null;panStart=null});
-$('icReset').onclick=resetIcPoints;$('icUndo').onclick=()=>{if(setIndex>0){setIndex--;delete icPts[icKeys[setIndex]];pointArmed=false;updateIcPrompt();drawIc()}};$('icLoadFrame').onclick=loadIcFrame;window.addEventListener('resize',()=>{resizeIc();applyView()});
+
+const icLoupe=$('icLoupe'),icLoupeCross=$('icLoupeCross'),loupeCtx=icLoupe.getContext('2d'),loupeCrossCtx=icLoupeCross.getContext('2d');
+function hideLoupe(){icLoupe.style.display='none';icLoupeCross.style.display='none'}
+function showLoupe(q){
+ if(!pointArmed||icImg.hidden)return hideLoupe();
+ const r=icStage.getBoundingClientRect(),size=150,margin=12;
+ let left=q.x+28,top=q.y-size-28;
+ if(left+size>r.width-margin)left=q.x-size-28;
+ if(top<margin)top=q.y+28;
+ left=Math.max(margin,Math.min(r.width-size-margin,left));
+ top=Math.max(margin,Math.min(r.height-size-margin,top));
+ for(const el of [icLoupe,icLoupeCross]){el.style.left=left+'px';el.style.top=top+'px';el.style.display='block'}
+ loupeCtx.clearRect(0,0,300,300);
+ const ip=screenToImage(q.x,q.y),zoom=3.2,sw=300/zoom,sh=300/zoom;
+ const sx=ip.x-sw/2,sy=ip.y-sh/2;
+ loupeCtx.drawImage(icImg,sx,sy,sw,sh,0,0,300,300);
+ loupeCrossCtx.clearRect(0,0,300,300);
+ loupeCrossCtx.strokeStyle='rgba(255,255,255,.95)';loupeCrossCtx.lineWidth=2;
+ loupeCrossCtx.beginPath();loupeCrossCtx.moveTo(150,110);loupeCrossCtx.lineTo(150,190);loupeCrossCtx.moveTo(110,150);loupeCrossCtx.lineTo(190,150);loupeCrossCtx.stroke();
+ loupeCrossCtx.beginPath();loupeCrossCtx.arc(150,150,12,0,Math.PI*2);loupeCrossCtx.stroke();
+}
+
+icCanvas.addEventListener('pointerdown',e=>{if(icImg.hidden)return;const q=xy(e);touches.set(e.pointerId,q);icCanvas.setPointerCapture(e.pointerId);moved=false;if(pointArmed&&touches.size===1){panStart=null;showLoupe(q);e.preventDefault();return}if(touches.size>=2){if(pendingTap){clearTimeout(pendingTap);pendingTap=null}beginGesture();e.preventDefault();return}panStart={x:q.x,y:q.y,px:icPanX,py:icPanY};e.preventDefault()});
+icCanvas.addEventListener('pointermove',e=>{if(!touches.has(e.pointerId))return;const q=xy(e);touches.set(e.pointerId,q);if(pointArmed&&touches.size===1){moved=false;showLoupe(q);e.preventDefault();return}if(touches.size>=2){if(!gesture)beginGesture();const a=[...touches.values()],m=mid(a[0],a[1]),b=baseImageRect();icZoom=Math.max(1,Math.min(4,gesture.z*dst(a[0],a[1])/Math.max(1,gesture.d)));icPanX=m.x-b.x-gesture.ax*b.w*icZoom;icPanY=m.y-b.y-gesture.ay*b.h*icZoom;if(icZoom<=1.001){icZoom=1;icPanX=icPanY=0}applyView();e.preventDefault();return}if(panStart&&dst(q,{x:panStart.x,y:panStart.y})>5){moved=true;icPanX=panStart.px+(q.x-panStart.x);icPanY=panStart.py+(q.y-panStart.y);applyView();e.preventDefault()}});
+icCanvas.addEventListener('pointerup',e=>{const q=xy(e),wasMoved=moved;touches.delete(e.pointerId);if(touches.size<2)gesture=null;if(!touches.size)panStart=null;if(pointArmed){hideLoupe();placePoint(q);lastTap=0;return}if(wasMoved)return;const now=Date.now();if(now-lastTap<320){if(pendingTap){clearTimeout(pendingTap);pendingTap=null}lastTap=0;armPoint();return}lastTap=now;pendingTap=setTimeout(()=>{pendingTap=null},340)});
+icCanvas.addEventListener('pointercancel',e=>{touches.delete(e.pointerId);gesture=null;panStart=null;hideLoupe()});
+$('icReset').onclick=resetIcPoints;$('icUndo').onclick=()=>{
+ if(pelvisSetIndex>0){pelvisSetIndex--;delete icPts[pelvisSetIndex===0?'sias':'sips'];pointArmed=false;updatePelvisUI();drawIc();return}
+ if(setIndex>0){setIndex--;delete icPts[icKeys[setIndex]];pointArmed=false;updateIcPrompt();drawIc()}
+};$('icLoadFrame').onclick=loadIcFrame;window.addEventListener('resize',()=>{resizeIc();applyView()});
 
 
-// ---- v0.6.2 · SIAS/SIPS Referenzpunkte + Beckenmessung ----
+// ---- v0.6.3 · SIAS/SIPS Referenzpunkte + Beckenmessung ----
 function pelvisName(){return pelvisSetIndex===0?'SIAS':'SIPS'}
 function axisAngle(a,b){return Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI}
 function norm180(a){while(a>180)a-=360;while(a<-180)a+=360;return a}
@@ -509,7 +537,7 @@ updateIcPrompt=function(){
   if(setIndex>=5)updatePelvisUI();
 };
 
-// ---- v0.6.2 · Initial Contact Befund & Interpretation ----
+// ---- v0.6.3 · Initial Contact Befund & Interpretation ----
 const icQualIds=['qHeel','qForefoot','qPelvisDrop','qPelvisRot','qTrunkLean','qStepLength'];
 
 function currentIcMeasures(){
