@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="RunAssist GA">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon-512.png">
-<title>RunAssist GA iPad v0.5.9</title>
+<title>RunAssist GA iPad v0.6.0</title>
 <style>
 :root{--p:#168a82;--pd:#0d5f59;--soft:#eaf7f5;--line:#cfe0e1;--ink:#24383a;--muted:#6d7f82}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -60,10 +60,20 @@ input[type=file]{position:absolute;left:-9999px}.scrub{width:100%;margin:12px 0}
 .icActions{grid-template-columns:repeat(3,1fr)}
 @media(max-width:620px){.icZoomBar{grid-template-columns:auto 1fr auto}.icZoomBar button:last-child{grid-column:1/-1}.icActions{grid-template-columns:1fr}}
 
+
+.icQual{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.icQual label{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fbfdfd;font-size:12px;display:flex;gap:8px;align-items:flex-start}
+.icQual input{position:static;left:auto;margin-top:2px;transform:scale(1.15)}
+.icText{width:100%;min-height:82px;border:1px solid #b8cecf;border-radius:12px;padding:10px;font:inherit;color:var(--ink);resize:vertical;background:#fff}
+.reportBox{background:#f6fbfa;border:1px solid var(--line);border-radius:12px;padding:12px;line-height:1.5;font-size:12px}
+.reportBox b{color:var(--pd)}
+.icReportActions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+@media(max-width:700px){.icQual{grid-template-columns:1fr}.icReportActions{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body>
-<header><div class="brand"><div><div class="logo"><span>Run</span>Assist</div><div class="note">GA · iPad PWA v0.5.9</div></div><div class="note">IC · Gestenmodus</div></div></header>
+<header><div class="brand"><div><div class="logo"><span>Run</span>Assist</div><div class="note">GA · iPad PWA v0.6.0</div></div><div class="note">IC · Komplettanalyse</div></div></header>
 <main>
 
 <section class="card">
@@ -132,6 +142,37 @@ input[type=file]{position:absolute;left:-9999px}.scrub{width:100%;margin:12px 0}
 <div id="icFinding" class="status diag">Automatischer IC-Befund erscheint nach Setzen der Messpunkte.</div>
 <div class="note">Pilot: 2D-Bildwinkel. Kameraperspektive, Markerposition und Projektion beeinflussen die Werte. Die Referenzbereiche sind klinische Orientierungswerte.</div>
 </div></div>
+</section>
+
+
+<section class="card">
+<h2>7 · Initial Contact · Befund & Interpretation</h2>
+<p class="note">RunAssist übernimmt die gemessenen Winkel automatisch. Ergänze nur die qualitativen Beobachtungen, die sich im Einzelbild nicht sinnvoll allein über Gradwerte beschreiben lassen.</p>
+
+<div class="measure" style="margin-bottom:10px">
+  <div class="measureHead"><h3>Automatische Winkelinterpretation</h3><span class="badge">aus Abschnitt 6</span></div>
+  <div id="icAutoInterpretation" class="reportBox" style="margin-top:8px">Noch keine vollständige IC-Messung vorhanden.</div>
+</div>
+
+<h3 style="font-size:13px;color:var(--pd);margin:12px 0 8px">Qualitative Beobachtungen</h3>
+<div class="icQual">
+<label><input type="checkbox" id="qHeel"><span><b>Fersenkontakt vorhanden</b><br><span class="note">klarer initialer Fersenaufsatz</span></span></label>
+<label><input type="checkbox" id="qForefoot"><span><b>Vorfuß-/Mittelfußkontakt</b><br><span class="note">kein eindeutiger Fersenkontakt</span></span></label>
+<label><input type="checkbox" id="qPelvisDrop"><span><b>Beckenabsenkung kontralateral</b><br><span class="note">Hinweis auf reduzierte laterale Kontrolle</span></span></label>
+<label><input type="checkbox" id="qPelvisRot"><span><b>Auffällige Beckenrotation</b><br><span class="note">verstärkt oder vermindert</span></span></label>
+<label><input type="checkbox" id="qTrunkLean"><span><b>Rumpfneigung auffällig</b><br><span class="note">deutliche Vor-/Seitneigung</span></span></label>
+<label><input type="checkbox" id="qStepLength"><span><b>Schrittlänge auffällig</b><br><span class="note">verkürzt oder verlängert</span></span></label>
+</div>
+
+<h3 style="font-size:13px;color:var(--pd);margin:14px 0 8px">PT-Hypothese / klinische Überlegung</h3>
+<textarea id="icHypothesis" class="icText" placeholder="z. B. mögliche Ursache, Kompensationsstrategie, Zusammenhang mit vorherigem Befund ..."></textarea>
+
+<div class="icReportActions">
+  <button id="buildIcReport" class="primary">📝 IC-Kurzbefund erstellen</button>
+  <button id="clearIcReport">↺ Befund zurücksetzen</button>
+</div>
+
+<div id="icReport" class="reportBox" style="margin-top:10px"><b>IC-Kurzbefund:</b><br>Noch nicht erstellt.</div>
 </section>
 
 </main>
@@ -260,6 +301,12 @@ $('openCase').onchange=async e=>{
      }
    });
    currentVideoName=data.videoName||'';
+   if(data.icClinical){
+     const q=data.icClinical.qualitative||{};
+     icQualIds.forEach(id=>{if($(id))$(id).checked=!!q[id]});
+     if($('icHypothesis'))$('icHypothesis').value=data.icClinical.hypothesis||'';
+     if($('icReport') && data.icClinical.report)$('icReport').innerHTML='<b>IC-Kurzbefund:</b><br>'+data.icClinical.report.replace(/^IC-Kurzbefund:\s*/,'');
+   }
    icPts=data.icAnalysis ? JSON.parse(JSON.stringify(data.icAnalysis)) : defaultIcPoints();
    renderPhases();loadIcFrame();
    const count=saved.filter(Boolean).length;
@@ -310,6 +357,90 @@ icCanvas.addEventListener('pointermove',e=>{if(!touches.has(e.pointerId))return;
 icCanvas.addEventListener('pointerup',e=>{const q=xy(e),wasMoved=moved;touches.delete(e.pointerId);if(touches.size<2)gesture=null;if(!touches.size)panStart=null;if(wasMoved)return;const now=Date.now();if(pointArmed){placePoint(q);lastTap=0;return}if(now-lastTap<320){if(pendingTap){clearTimeout(pendingTap);pendingTap=null}lastTap=0;armPoint();return}lastTap=now;pendingTap=setTimeout(()=>{pendingTap=null},340)});
 icCanvas.addEventListener('pointercancel',e=>{touches.delete(e.pointerId);gesture=null;panStart=null});
 $('icReset').onclick=resetIcPoints;$('icUndo').onclick=()=>{if(setIndex>0){setIndex--;delete icPts[icKeys[setIndex]];pointArmed=false;updateIcPrompt();drawIc()}};$('icLoadFrame').onclick=loadIcFrame;window.addEventListener('resize',()=>{resizeIc();applyView()});
+
+// ---- v0.6.0 · Initial Contact Befund & Interpretation ----
+const icQualIds=['qHeel','qForefoot','qPelvisDrop','qPelvisRot','qTrunkLean','qStepLength'];
+
+function currentIcMeasures(){
+  if(typeof calcIc!=='function')return null;
+  try{return calcIc()}catch(e){return null}
+}
+
+function getQualitativeFindings(){
+  const f=[];
+  if($('qHeel')?.checked)f.push('klarer Fersenkontakt');
+  if($('qForefoot')?.checked)f.push('Vor-/Mittelfußkontakt ohne eindeutigen Fersenkontakt');
+  if($('qPelvisDrop')?.checked)f.push('kontralaterale Beckenabsenkung');
+  if($('qPelvisRot')?.checked)f.push('auffällige Beckenrotation');
+  if($('qTrunkLean')?.checked)f.push('auffällige Rumpfneigung');
+  if($('qStepLength')?.checked)f.push('auffällige Schrittlänge');
+  return f;
+}
+
+function buildAutoInterpretation(){
+  const m=currentIcMeasures();
+  if(!m || !Number.isFinite(m.hip) || !Number.isFinite(m.knee) || !Number.isFinite(m.ankle)){
+    $('icAutoInterpretation').textContent='Noch keine vollständige IC-Messung vorhanden.';
+    return '';
+  }
+  const parts=[];
+  if(m.hip<20)parts.push(`Hüftflexion vermindert (${m.hip.toFixed(1)}°; Orientierung 20–30°)`);
+  else if(m.hip>30)parts.push(`Hüftflexion vermehrt (${m.hip.toFixed(1)}°; Orientierung 20–30°)`);
+  else parts.push(`Hüftflexion im Orientierungsbereich (${m.hip.toFixed(1)}°)`);
+
+  if(m.knee<0)parts.push(`Kniestreckung über Neutralstellung hinaus (${m.knee.toFixed(1)}°)`);
+  else if(m.knee>10)parts.push(`Knieflexion vermehrt (${m.knee.toFixed(1)}°; Orientierung 0–10°)`);
+  else parts.push(`Knieflexion im Orientierungsbereich (${m.knee.toFixed(1)}°)`);
+
+  if(m.ankle<0)parts.push(`OSG gegenüber der Orientierung plantarflexiert (${m.ankle.toFixed(1)}°)`);
+  else if(m.ankle>5)parts.push(`OSG-Dorsalextension vermehrt (${m.ankle.toFixed(1)}°; Orientierung 0–5°)`);
+  else parts.push(`OSG im Orientierungsbereich (${m.ankle.toFixed(1)}° DF)`);
+
+  const txt=parts.join(' · ');
+  $('icAutoInterpretation').textContent=txt;
+  return txt;
+}
+
+function buildIcReport(){
+  const auto=buildAutoInterpretation();
+  const qualitative=getQualitativeFindings();
+  const hypothesis=($('icHypothesis')?.value||'').trim();
+  const sections=[];
+  if(auto)sections.push(auto+'.');
+  if(qualitative.length)sections.push('Qualitativ zeigt sich '+qualitative.join(', ')+'.');
+  if(hypothesis)sections.push('PT-Hypothese: '+hypothesis);
+  $('icReport').innerHTML='<b>IC-Kurzbefund:</b><br>'+(sections.length?sections.join(' '):'Noch keine auswertbaren Angaben vorhanden.');
+}
+
+$('buildIcReport').onclick=buildIcReport;
+$('clearIcReport').onclick=()=>{
+  icQualIds.forEach(id=>{if($(id))$(id).checked=false});
+  if($('icHypothesis'))$('icHypothesis').value='';
+  $('icReport').innerHTML='<b>IC-Kurzbefund:</b><br>Noch nicht erstellt.';
+};
+
+icQualIds.forEach(id=>{
+  if($(id))$(id).addEventListener('change',buildIcReport);
+});
+if($('icHypothesis'))$('icHypothesis').addEventListener('input',()=>{ if(($('icReport').textContent||'').includes('IC-Kurzbefund')) buildIcReport(); });
+
+const originalDrawIc = drawIc;
+drawIc = function(){
+  originalDrawIc();
+  buildAutoInterpretation();
+};
+
+// Extend case persistence with qualitative IC data and report.
+const originalBuildCase = buildCase;
+buildCase = function(){
+  const data=originalBuildCase();
+  data.icClinical={
+    qualitative:Object.fromEntries(icQualIds.map(id=>[id,!!($(id)?.checked)])),
+    hypothesis:($('icHypothesis')?.value||''),
+    report:($('icReport')?.innerText||'')
+  };
+  return data;
+};
 
 renderPhases();upd();loadIcFrame();
 </script>
