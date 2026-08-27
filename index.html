@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="RunAssist GA">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon-512.png">
-<title>RunAssist GA iPad v0.7.0</title>
+<title>RunAssist GA iPad v0.7.1</title>
 <style>
 :root{--p:#168a82;--pd:#0d5f59;--soft:#eaf7f5;--line:#cfe0e1;--ink:#24383a;--muted:#6d7f82}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -88,7 +88,7 @@ input[type=file]{position:absolute;left:-9999px}.scrub{width:100%;margin:12px 0}
 </style>
 </head>
 <body>
-<header><div class="brand"><div><div class="logo"><span>Run</span>Assist</div><div class="note">GA · iPad PWA v0.7.0</div></div><div class="note">IC · Auto-Referenzpunkte</div></div></header>
+<header><div class="brand"><div><div class="logo"><span>Run</span>Assist</div><div class="note">GA · iPad PWA v0.7.1</div></div><div class="note">IC · Auto-Referenzpunkte Safari-Fix</div></div></header>
 <main>
 
 <section class="card">
@@ -240,30 +240,52 @@ input[type=file]{position:absolute;left:-9999px}.scrub{width:100%;margin:12px 0}
 
 <script>
 
+
 let poseLandmarker=null,poseModelLoading=null,autoConfidence={};
+
+function loadClassicScript(src){
+  return new Promise((resolve,reject)=>{
+    const existing=[...document.scripts].find(s=>s.src===src);
+    if(existing){
+      if(window.Pose)return resolve();
+      existing.addEventListener('load',resolve,{once:true});
+      existing.addEventListener('error',()=>reject(new Error('MediaPipe-Script konnte nicht geladen werden')),{once:true});
+      return;
+    }
+    const s=document.createElement('script');
+    s.src=src;
+    s.crossOrigin='anonymous';
+    s.onload=resolve;
+    s.onerror=()=>reject(new Error('MediaPipe-Script konnte nicht geladen werden'));
+    document.head.appendChild(s);
+  });
+}
+
 async function ensurePoseModel(){
- if(poseLandmarker)return poseLandmarker;
- if(poseModelLoading)return poseModelLoading;
- poseModelLoading=(async()=>{
-   const vision=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/+esm');
-   const fileset=await vision.FilesetResolver.forVisionTasks(
-     'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/wasm'
-   );
-   poseLandmarker=await vision.PoseLandmarker.createFromOptions(fileset,{
-     baseOptions:{
-       modelAssetPath:'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/latest/pose_landmarker_lite.task',
-       delegate:'CPU'
-     },
-     runningMode:'IMAGE',
-     numPoses:1,
-     minPoseDetectionConfidence:0.45,
-     minPosePresenceConfidence:0.45,
-     minTrackingConfidence:0.45
-   });
-   return poseLandmarker;
- })();
- try{return await poseModelLoading}
- catch(e){poseModelLoading=null;throw e}
+  if(poseLandmarker)return poseLandmarker;
+  if(poseModelLoading)return poseModelLoading;
+  poseModelLoading=(async()=>{
+    await loadClassicScript('https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js');
+    if(!window.Pose)throw new Error('MediaPipe Pose wurde nicht bereitgestellt');
+
+    const pose=new Pose({
+      locateFile:(file)=>'https://cdn.jsdelivr.net/npm/@mediapipe/pose/'+file
+    });
+    pose.setOptions({
+      modelComplexity:0,
+      smoothLandmarks:false,
+      enableSegmentation:false,
+      smoothSegmentation:false,
+      minDetectionConfidence:0.45,
+      minTrackingConfidence:0.45
+    });
+
+    poseLandmarker=pose;
+    return poseLandmarker;
+  })();
+
+  try{return await poseModelLoading}
+  catch(e){poseModelLoading=null;throw e}
 }
 
 const $=x=>document.getElementById(x),v=$('v'),s=$('scrub');let u='',fps=30,currentVideoName='';
@@ -473,7 +495,7 @@ $('icReset').onclick=resetIcPoints;$('icUndo').onclick=()=>{
 };$('icLoadFrame').onclick=loadIcFrame;window.addEventListener('resize',()=>{resizeIc();applyView()});
 
 
-// ---- v0.7.0 · SIAS/SIPS Referenzpunkte + Beckenmessung ----
+// ---- v0.7.1 · SIAS/SIPS Referenzpunkte + Beckenmessung ----
 function pelvisName(){return pelvisSetIndex===0?'SIAS':'SIPS'}
 function axisAngle(a,b){return Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI}
 function norm180(a){while(a>180)a-=360;while(a<-180)a+=360;return a}
@@ -605,7 +627,7 @@ updateIcPrompt=function(){
   if(setIndex>=5)updatePelvisUI();
 };
 
-// ---- v0.7.0 · Initial Contact Befund & Interpretation ----
+// ---- v0.7.1 · Initial Contact Befund & Interpretation ----
 const icQualIds=['qHeel','qForefoot','qPelvisDrop','qPelvisRot','qTrunkLean','qStepLength'];
 
 function currentIcMeasures(){
@@ -689,7 +711,7 @@ buildCase = function(){
   return data;
 };
 
-// ---- v0.7.0 · automatische Referenzpunkt-Vorschläge ----
+// ---- v0.7.1 · automatische Referenzpunkt-Vorschläge ----
 function confPct(v){return Number.isFinite(v)?Math.round(v*100)+'%':'—'}
 function confClass(v){return v>=.75?'high':v>=.5?'mid':'low'}
 function setConf(id,v){
@@ -701,7 +723,7 @@ function clearAutoConfidence(){
  ['confShoulder','confHip','confKnee','confAnkle','confFoot'].forEach(id=>$(id).textContent='—');
 }
 function lmScore(lms,ids){
- const vals=ids.map(i=>Number(lms[i]?.visibility ?? lms[i]?.presence ?? 0));
+ const vals=ids.map(i=>Number(lms[i]?.visibility ?? 0));
  return vals.reduce((a,b)=>a+b,0)/Math.max(1,vals.length);
 }
 function chooseCameraSide(lms){
@@ -715,7 +737,7 @@ function proposalFromLandmarks(lms,side){
  const out={},confidence={};
  Object.entries(ids).forEach(([k,i])=>{
    const p=lms[i];
-   if(p){out[k]={x:Math.max(0,Math.min(1,p.x)),y:Math.max(0,Math.min(1,p.y))};confidence[k]=Number(p.visibility ?? p.presence ?? 0)}
+   if(p){out[k]={x:Math.max(0,Math.min(1,p.x)),y:Math.max(0,Math.min(1,p.y))};confidence[k]=Number(p.visibility ?? 0)}
  });
  return {out,confidence};
 }
@@ -728,22 +750,49 @@ async function runAutoPose(){
  $('autoPose').disabled=true;
  $('autoStatus').textContent='Pose-Modell wird geladen … beim ersten Mal kann das einige Sekunden dauern.';
  try{
-   const model=await ensurePoseModel();
+   const pose=await ensurePoseModel();
    const img=new Image();
    img.src=ic.image;
    await img.decode();
+
    $('autoStatus').textContent='IC-Frame wird lokal auf dem iPad analysiert …';
-   const result=model.detect(img);
-   const lms=result?.landmarks?.[0];
+
+   const result=await new Promise(async (resolve,reject)=>{
+     let finished=false;
+     const timer=setTimeout(()=>{
+       if(!finished){finished=true;reject(new Error('Pose-Erkennung hat zu lange gebraucht'))}
+     },12000);
+
+     pose.onResults((res)=>{
+       if(finished)return;
+       finished=true;
+       clearTimeout(timer);
+       resolve(res);
+     });
+
+     try{
+       await pose.send({image:img});
+     }catch(e){
+       if(!finished){
+         finished=true;
+         clearTimeout(timer);
+         reject(e);
+       }
+     }
+   });
+
+   const lms=result?.poseLandmarks;
    if(!lms)throw new Error('Keine Person sicher erkannt');
+
    const side=chooseCameraSide(lms);
    const {out,confidence}=proposalFromLandmarks(lms,side);
    if(Object.keys(out).length<4)throw new Error('Zu wenige Referenzpunkte erkannt');
 
-   // Keep SIAS/SIPS if the therapist already set them manually.
    const sias=icPts.sias,sips=icPts.sips;
    icPts={...out};
-   if(sias)icPts.sias=sias;if(sips)icPts.sips=sips;
+   if(sias)icPts.sias=sias;
+   if(sips)icPts.sips=sips;
+
    setIndex=5;
    pointArmed=false;
    autoConfidence=confidence;
@@ -754,13 +803,23 @@ async function runAutoPose(){
    setConf('confAnkle',confidence.ankle);
    setConf('confFoot',confidence.forefoot);
 
-   const avg=Object.values(confidence).reduce((a,b)=>a+b,0)/Math.max(1,Object.values(confidence).length);
-   $('autoStatus').textContent='Vorschlag erstellt · kameraseitige Pose automatisch als '+(side==='left'?'linke':'rechte')+' Modellseite gewählt · mittlere Sicherheit '+Math.round(avg*100)+'%. Bitte Punkte fachlich prüfen.';
+   const vals=Object.values(confidence).filter(Number.isFinite);
+   const avg=vals.reduce((a,b)=>a+b,0)/Math.max(1,vals.length);
+
+   $('autoStatus').textContent='Vorschlag erstellt · kameraseitige Pose automatisch als '
+     +(side==='left'?'linke':'rechte')
+     +' Modellseite gewählt · mittlere Sicherheit '
+     +Math.round(avg*100)
+     +'%. Bitte Punkte fachlich prüfen.';
+
    if(typeof updateIcPrompt==='function')updateIcPrompt();
    if(typeof updatePelvisUI==='function')updatePelvisUI();
    drawIc();
+
  }catch(err){
-   $('autoStatus').textContent='Automatische Erkennung nicht verfügbar: '+(err?.message||err)+'. Die manuelle Messung bleibt vollständig nutzbar.';
+   $('autoStatus').textContent='Automatische Erkennung nicht verfügbar: '
+     +(err?.message||err)
+     +'. Die manuelle Messung bleibt vollständig nutzbar.';
  }finally{
    $('autoPose').disabled=false;
  }
