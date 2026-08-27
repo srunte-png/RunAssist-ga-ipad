@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="RunAssist GA">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon-512.png">
-<title>RunAssist GA iPad v0.5.7</title>
+<title>RunAssist GA iPad v0.5.8</title>
 <style>
 :root{--p:#168a82;--pd:#0d5f59;--soft:#eaf7f5;--line:#cfe0e1;--ink:#24383a;--muted:#6d7f82}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -63,7 +63,7 @@ input[type=file]{position:absolute;left:-9999px}.scrub{width:100%;margin:12px 0}
 </style>
 </head>
 <body>
-<header><div class="brand"><div><div class="logo"><span>Run</span>Assist</div><div class="note">GA · iPad PWA v0.5.7</div></div><div class="note">IC · Präzisionsmodus</div></div></header>
+<header><div class="brand"><div><div class="logo"><span>Run</span>Assist</div><div class="note">GA · iPad PWA v0.5.8</div></div><div class="note">IC · Touch-Präzision</div></div></header>
 <main>
 
 <section class="card">
@@ -116,21 +116,15 @@ input[type=file]{position:absolute;left:-9999px}.scrub{width:100%;margin:12px 0}
 
 <section class="card">
 <h2>6 · Initial Contact · Winkelanalyse (Pilot)</h2>
-<p class="note"><b>Referenzbein = immer das Bein auf der gefilmten Kameraseite.</b> Setze die anatomischen Landmarken selbst. RunAssist berechnet erst nach vollständiger Markierung die bildbasierten 2D-Winkel.</p>
+<p class="note"><b>Referenzbein = immer das Bein auf der gefilmten Kameraseite.</b> Setze die anatomischen Referenzpunkte selbst. RunAssist berechnet erst nach vollständiger Markierung die bildbasierten 2D-Winkel.</p>
 <div class="icGrid">
 <div>
 <div id="icStage" class="icStage"><div id="icEmpty" class="note" style="color:#dfe8e8;padding:20px;text-align:center">Noch kein Initial-Contact-Frame gespeichert.</div><img id="icImage" alt="Initial Contact" hidden><canvas id="icCanvas"></canvas></div>
-<div class="icZoomBar">
-  <span class="icZoomLabel" id="icZoomLabel">1.0×</span>
-  <input id="icZoom" type="range" min="1" max="4" value="1" step="0.1">
-  <button id="icZoomReset">1×</button>
-  <button id="icPanMode">✋ Bild verschieben</button>
-</div>
-<div class="precisionNote">Zoom 1–4×. Im Verschiebe-Modus das vergrößerte Bild mit dem Finger bewegen. Landmarken bleiben am Bild verankert. Markerzentrum = feines Fadenkreuz.</div>
-<div class="icActions" style="margin-top:8px"><button id="icReset">↺ Landmarken neu setzen</button><button id="icUndo">← Letzten Punkt löschen</button><button id="icLoadFrame" class="primary">IC-Frame aktualisieren</button></div>
+<div class="precisionNote"><b>iPad-Steuerung:</b> 1 Finger = Referenzpunkt setzen oder verschieben · 2 Finger = Bild verschieben und zoomen. Kein Umschalten mehr nötig.</div>
+<div class="icActions" style="margin-top:8px"><button id="icReset">↺ Referenzpunkte neu setzen</button><button id="icUndo">← Letzten Punkt löschen</button><button id="icLoadFrame" class="primary">IC-Frame aktualisieren</button></div>
 </div>
 <div class="icTools">
-<div class="pointHelp"><b>Referenzbein:</b> kameraseitiges Bein<br><br><b>Landmarken:</b><br>S = Schulter · H = Hüfte · K = Knie · A = Sprunggelenk · F = Vorfuß<br><br><b id="icPrompt">1/5 · Bitte Schulter antippen.</b><br><br>Nach dem Setzen können alle Punkte mit dem Finger verschoben werden. Für maximale Genauigkeit Bild vergrößern und das Fadenkreuz auf die Gelenkmitte setzen.</div>
+<div class="pointHelp"><b>Referenzbein:</b> kameraseitiges Bein<br><br><b>Referenzpunkte:</b><br>S = Schulter · H = Hüfte · K = Knie · A = Sprunggelenk · F = Vorfuß<br><br><b id="icPrompt">1/5 · Bitte Schulter antippen.</b><br><br>Nach dem Setzen können alle Punkte mit dem Finger verschoben werden. Für maximale Genauigkeit Bild vergrößern und das Fadenkreuz auf die Gelenkmitte setzen.</div>
 <div class="measure"><div class="measureHead"><h3>Hüfte · Flexion</h3><span id="hipVal" class="val">—</span></div><div class="ref">Referenz IC: 20–30° Flexion</div><div id="hipEval" class="eval">Noch nicht gemessen</div></div>
 <div class="measure"><div class="measureHead"><h3>Knie · Flexion</h3><span id="kneeVal" class="val">—</span></div><div class="ref">Referenz IC: 0–10° Flexion</div><div id="kneeEval" class="eval">Noch nicht gemessen</div></div>
 <div class="measure"><div class="measureHead"><h3>OSG · Dorsalextension</h3><span id="ankleVal" class="val">—</span></div><div class="ref">Orientierung IC: ca. 0–5° Dorsalextension</div><div id="ankleEval" class="eval">Noch nicht gemessen</div></div>
@@ -283,99 +277,28 @@ $('openCase').onchange=async e=>{
 
 
 const icStage=$('icStage'),icImg=$('icImage'),icCanvas=$('icCanvas'),icCtx=icCanvas.getContext('2d');
-let icPts={},dragKey=null,setIndex=0,icZoom=1,icPanX=0,icPanY=0,panMode=false,panStart=null;
-const icKeys=['shoulder','hip','knee','ankle','forefoot'];
-const icLabels={shoulder:'S',hip:'H',knee:'K',ankle:'A',forefoot:'F'};
-const icNames={shoulder:'Schulter',hip:'Hüfte',knee:'Knie',ankle:'Sprunggelenk',forefoot:'Vorfuß'};
-
-function clearIcMeasurements(){
- $('hipVal').textContent='—';$('kneeVal').textContent='—';$('ankleVal').textContent='—';
- ['hipEval','kneeEval','ankleEval'].forEach(id=>{$(id).textContent='Noch nicht gemessen';$(id).className='eval'});
- $('icFinding').textContent='Automatischer IC-Befund erscheint nach Setzen aller fünf Landmarken.';
-}
-function updateIcPrompt(){
- if(setIndex<icKeys.length)$('icPrompt').textContent=(setIndex+1)+'/5 · Bitte '+icNames[icKeys[setIndex]]+' am kameraseitigen Referenzbein antippen.';
- else $('icPrompt').textContent='✓ Alle Landmarken gesetzt. Punkte können jetzt präzise verschoben werden.';
-}
+let icPts={},dragKey=null,setIndex=0,icZoom=1,icPanX=0,icPanY=0,touches=new Map(),gesture=null;
+const icKeys=['shoulder','hip','knee','ankle','forefoot'],icLabels={shoulder:'S',hip:'H',knee:'K',ankle:'A',forefoot:'F'},icNames={shoulder:'Schulter',hip:'Hüfte',knee:'Knie',ankle:'Sprunggelenk',forefoot:'Vorfuß'};
+function clearIcMeasurements(){$('hipVal').textContent='—';$('kneeVal').textContent='—';$('ankleVal').textContent='—';['hipEval','kneeEval','ankleEval'].forEach(id=>{$(id).textContent='Noch nicht gemessen';$(id).className='eval'});$('icFinding').textContent='Automatischer IC-Befund erscheint nach Setzen aller fünf Referenzpunkte.'}
+function updateIcPrompt(){if(setIndex<5)$('icPrompt').textContent=(setIndex+1)+'/5 · Bitte '+icNames[icKeys[setIndex]]+' am kameraseitigen Referenzbein antippen.';else $('icPrompt').textContent='✓ Alle Referenzpunkte gesetzt. Punkte können jetzt präzise verschoben werden.'}
 function resetIcPoints(){icPts={};setIndex=0;dragKey=null;clearIcMeasurements();updateIcPrompt();drawIc()}
-function resetView(){icZoom=1;icPanX=0;icPanY=0;$('icZoom').value='1';$('icZoomLabel').textContent='1.0×';applyView()}
-function loadIcFrame(){
- const ic=saved[0];
- if(!ic||!ic.image){icImg.hidden=true;$('icEmpty').hidden=false;resetIcPoints();return}
- $('icEmpty').hidden=true;icImg.hidden=false;
- icImg.onload=()=>{resizeIc();resetView();resetIcPoints()};
- icImg.src=ic.image;
- if(icImg.complete){resizeIc();resetView();resetIcPoints()}
-}
-function resizeIc(){const r=icStage.getBoundingClientRect(),dpr=Math.max(1,window.devicePixelRatio||1);icCanvas.width=Math.max(1,Math.round(r.width*dpr));icCanvas.height=Math.max(1,Math.round(r.height*dpr));icCtx.setTransform(dpr,0,0,dpr,0,0)}
-function baseImageRect(){
- const sr=icStage.getBoundingClientRect();
- if(!icImg.naturalWidth||!icImg.naturalHeight)return{x:0,y:0,w:sr.width,h:sr.height};
- const scale=Math.min(sr.width/icImg.naturalWidth,sr.height/icImg.naturalHeight);
- const w=icImg.naturalWidth*scale,h=icImg.naturalHeight*scale;
- return{x:(sr.width-w)/2,y:(sr.height-h)/2,w,h};
-}
-function applyView(){
- const b=baseImageRect();
- icImg.style.position='absolute';icImg.style.width=b.w+'px';icImg.style.height=b.h+'px';icImg.style.maxWidth='none';icImg.style.maxHeight='none';
- icImg.style.left=b.x+'px';icImg.style.top=b.y+'px';
- icImg.style.transform=`translate(${icPanX}px,${icPanY}px) scale(${icZoom})`;
- drawIc();
-}
-function imageToScreen(p){
- const b=baseImageRect();
- return{x:b.x+icPanX+(p.x*b.w*icZoom),y:b.y+icPanY+(p.y*b.h*icZoom)};
-}
-function screenToImage(x,y){
- const b=baseImageRect();
- return{x:Math.max(0,Math.min(1,(x-b.x-icPanX)/(b.w*icZoom))),y:Math.max(0,Math.min(1,(y-b.y-icPanY)/(b.h*icZoom)))};
-}
-function angleABC(a,b,c){const u={x:a.x-b.x,y:a.y-b.y},w={x:c.x-b.x,y:c.y-b.y},dot=u.x*w.x+u.y*w.y,nu=Math.hypot(u.x,u.y),nw=Math.hypot(w.x,w.y);if(!nu||!nw)return NaN;return Math.acos(Math.max(-1,Math.min(1,dot/(nu*nw))))*180/Math.PI}
-function allIcSet(){return icKeys.every(k=>icPts[k])}
-function calcIc(){if(!allIcSet())return null;const p={};icKeys.forEach(k=>p[k]=imageToScreen(icPts[k]));return{hip:Math.max(0,180-angleABC(p.shoulder,p.hip,p.knee)),knee:Math.max(0,180-angleABC(p.hip,p.knee,p.ankle)),ankle:90-angleABC(p.knee,p.ankle,p.forefoot)}}
-function classify(v,lo,hi,label){if(!Number.isFinite(v))return{text:'Noch nicht gemessen',cls:''};if(v<lo)return{text:(lo-v).toFixed(1)+'° unter Referenz · '+label+' vermindert',cls:'warn'};if(v>hi)return{text:(v-hi).toFixed(1)+'° über Referenz · '+label+' vermehrt',cls:'warn'};return{text:'im Orientierungsbereich',cls:'good'}}
-function drawMarker(q,label){
- const radius=7;
- icCtx.beginPath();icCtx.fillStyle='rgba(22,138,130,.78)';icCtx.arc(q.x,q.y,radius,0,Math.PI*2);icCtx.fill();
- icCtx.lineWidth=1.5;icCtx.strokeStyle='white';icCtx.stroke();
- icCtx.strokeStyle='#fff';icCtx.lineWidth=1;
- icCtx.beginPath();icCtx.moveTo(q.x-11,q.y);icCtx.lineTo(q.x+11,q.y);icCtx.moveTo(q.x,q.y-11);icCtx.lineTo(q.x,q.y+11);icCtx.stroke();
- icCtx.fillStyle='white';icCtx.font='bold 8px -apple-system';icCtx.textAlign='center';icCtx.textBaseline='middle';icCtx.fillText(label,q.x,q.y-15);
-}
-function drawIc(){
- const r=icStage.getBoundingClientRect();icCtx.clearRect(0,0,r.width,r.height);
- const placed=icKeys.filter(k=>icPts[k]),p={};placed.forEach(k=>p[k]=imageToScreen(icPts[k]));
- if(placed.length>1){icCtx.lineWidth=2;icCtx.strokeStyle='rgba(255,255,255,.88)';icCtx.beginPath();icCtx.moveTo(p[placed[0]].x,p[placed[0]].y);for(let i=1;i<placed.length;i++)icCtx.lineTo(p[placed[i]].x,p[placed[i]].y);icCtx.stroke()}
- placed.forEach(k=>drawMarker(p[k],icLabels[k]));
- const m=calcIc();if(!m){clearIcMeasurements();return}
- $('hipVal').textContent=m.hip.toFixed(1)+'°';$('kneeVal').textContent=m.knee.toFixed(1)+'°';$('ankleVal').textContent=(m.ankle>=0?'+':'')+m.ankle.toFixed(1)+'°';
- const he=classify(m.hip,20,30,'Hüftflexion'),ke=classify(m.knee,0,10,'Knieflexion'),ae=classify(m.ankle,0,5,'Dorsalextension');
- [['hipEval',he],['kneeEval',ke],['ankleEval',ae]].forEach(([id,e])=>{$(id).textContent=e.text;$(id).className='eval '+e.cls});
- const f=[];if(m.hip<20)f.push('verminderte Hüftflexion');else if(m.hip>30)f.push('vermehrte Hüftflexion');if(m.knee>10)f.push('vermehrte Knieflexion');if(m.ankle<0)f.push('OSG plantarflexierter als Orientierung');else if(m.ankle>5)f.push('vermehrte OSG-Dorsalextension');
- $('icFinding').textContent=f.length?'IC · kameraseitiges Referenzbein: '+f.join(' · '):'IC · kameraseitiges Referenzbein: gemessene Pilotwerte im hinterlegten Orientierungsbereich.'
-}
-function pointerXY(e){const r=icStage.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
-icCanvas.addEventListener('pointerdown',e=>{
- if(icImg.hidden)return;const q=pointerXY(e);
- if(panMode&&icZoom>1){panStart={x:q.x,y:q.y,px:icPanX,py:icPanY};icCanvas.setPointerCapture(e.pointerId);e.preventDefault();return}
- let best=null,bd=24;Object.keys(icPts).forEach(k=>{const p=imageToScreen(icPts[k]),d=Math.hypot(p.x-q.x,p.y-q.y);if(d<bd){bd=d;best=k}});
- if(best){dragKey=best;icCanvas.setPointerCapture(e.pointerId);e.preventDefault();return}
- if(setIndex<icKeys.length){const k=icKeys[setIndex];icPts[k]=screenToImage(q.x,q.y);setIndex++;updateIcPrompt();drawIc();e.preventDefault()}
-});
-icCanvas.addEventListener('pointermove',e=>{
- const q=pointerXY(e);
- if(panStart){icPanX=panStart.px+(q.x-panStart.x);icPanY=panStart.py+(q.y-panStart.y);applyView();e.preventDefault();return}
- if(!dragKey)return;icPts[dragKey]=screenToImage(q.x,q.y);drawIc();e.preventDefault()
-});
-function endPointer(){dragKey=null;panStart=null}
-icCanvas.addEventListener('pointerup',endPointer);icCanvas.addEventListener('pointercancel',endPointer);
-$('icReset').onclick=resetIcPoints;
-$('icUndo').onclick=()=>{if(setIndex>0){setIndex--;delete icPts[icKeys[setIndex]];updateIcPrompt();drawIc()}};
-$('icLoadFrame').onclick=loadIcFrame;
-$('icZoom').oninput=e=>{icZoom=Number(e.target.value);$('icZoomLabel').textContent=icZoom.toFixed(1)+'×';if(icZoom===1){icPanX=0;icPanY=0}applyView()};
-$('icZoomReset').onclick=resetView;
-$('icPanMode').onclick=()=>{panMode=!panMode;$('icPanMode').textContent=panMode?'📍 Landmarken setzen':'✋ Bild verschieben';$('icPanMode').classList.toggle('primary',panMode)};
-window.addEventListener('resize',()=>{resizeIc();applyView()});
+function resetView(){icZoom=1;icPanX=0;icPanY=0;applyView()}
+function loadIcFrame(){const ic=saved[0];if(!ic||!ic.image){icImg.hidden=true;$('icEmpty').hidden=false;resetIcPoints();return}$('icEmpty').hidden=true;icImg.hidden=false;icImg.onload=()=>{resizeIc();resetView();resetIcPoints()};icImg.src=ic.image;if(icImg.complete){resizeIc();resetView();resetIcPoints()}}
+function resizeIc(){const r=icStage.getBoundingClientRect(),d=Math.max(1,devicePixelRatio||1);icCanvas.width=Math.round(r.width*d);icCanvas.height=Math.round(r.height*d);icCtx.setTransform(d,0,0,d,0,0)}
+function baseImageRect(){const r=icStage.getBoundingClientRect();if(!icImg.naturalWidth)return{x:0,y:0,w:r.width,h:r.height};const s=Math.min(r.width/icImg.naturalWidth,r.height/icImg.naturalHeight),w=icImg.naturalWidth*s,h=icImg.naturalHeight*s;return{x:(r.width-w)/2,y:(r.height-h)/2,w,h}}
+function applyView(){const b=baseImageRect();icImg.style.position='absolute';icImg.style.width=b.w+'px';icImg.style.height=b.h+'px';icImg.style.maxWidth='none';icImg.style.maxHeight='none';icImg.style.left=b.x+'px';icImg.style.top=b.y+'px';icImg.style.transform=`translate(${icPanX}px,${icPanY}px) scale(${icZoom})`;drawIc()}
+function imageToScreen(p){const b=baseImageRect();return{x:b.x+icPanX+p.x*b.w*icZoom,y:b.y+icPanY+p.y*b.h*icZoom}}
+function screenToImage(x,y){const b=baseImageRect();return{x:Math.max(0,Math.min(1,(x-b.x-icPanX)/(b.w*icZoom))),y:Math.max(0,Math.min(1,(y-b.y-icPanY)/(b.h*icZoom)))}}
+function angleABC(a,b,c){const u={x:a.x-b.x,y:a.y-b.y},w={x:c.x-b.x,y:c.y-b.y},d=u.x*w.x+u.y*w.y,n=Math.hypot(u.x,u.y)*Math.hypot(w.x,w.y);return Math.acos(Math.max(-1,Math.min(1,d/n)))*180/Math.PI}
+function calcIc(){if(!icKeys.every(k=>icPts[k]))return null;const p={};icKeys.forEach(k=>p[k]=imageToScreen(icPts[k]));return{hip:Math.max(0,180-angleABC(p.shoulder,p.hip,p.knee)),knee:Math.max(0,180-angleABC(p.hip,p.knee,p.ankle)),ankle:90-angleABC(p.knee,p.ankle,p.forefoot)}}
+function classify(v,lo,hi,label){if(v<lo)return{text:(lo-v).toFixed(1)+'° unter Referenz · '+label+' vermindert',cls:'warn'};if(v>hi)return{text:(v-hi).toFixed(1)+'° über Referenz · '+label+' vermehrt',cls:'warn'};return{text:'im Orientierungsbereich',cls:'good'}}
+function drawIc(){const r=icStage.getBoundingClientRect();icCtx.clearRect(0,0,r.width,r.height);const keys=icKeys.filter(k=>icPts[k]),p={};keys.forEach(k=>p[k]=imageToScreen(icPts[k]));if(keys.length>1){icCtx.strokeStyle='rgba(255,255,255,.88)';icCtx.lineWidth=1.7;icCtx.beginPath();icCtx.moveTo(p[keys[0]].x,p[keys[0]].y);keys.slice(1).forEach(k=>icCtx.lineTo(p[k].x,p[k].y));icCtx.stroke()}keys.forEach(k=>{const q=p[k];icCtx.beginPath();icCtx.fillStyle='rgba(22,138,130,.65)';icCtx.arc(q.x,q.y,6,0,Math.PI*2);icCtx.fill();icCtx.strokeStyle='white';icCtx.lineWidth=1;icCtx.stroke();icCtx.beginPath();icCtx.moveTo(q.x-10,q.y);icCtx.lineTo(q.x+10,q.y);icCtx.moveTo(q.x,q.y-10);icCtx.lineTo(q.x,q.y+10);icCtx.stroke();icCtx.fillStyle='white';icCtx.font='bold 8px -apple-system';icCtx.textAlign='center';icCtx.fillText(icLabels[k],q.x,q.y-13)});const m=calcIc();if(!m){clearIcMeasurements();return}$('hipVal').textContent=m.hip.toFixed(1)+'°';$('kneeVal').textContent=m.knee.toFixed(1)+'°';$('ankleVal').textContent=(m.ankle>=0?'+':'')+m.ankle.toFixed(1)+'°';const es=[['hipEval',classify(m.hip,20,30,'Hüftflexion')],['kneeEval',classify(m.knee,0,10,'Knieflexion')],['ankleEval',classify(m.ankle,0,5,'Dorsalextension')]];es.forEach(([id,e])=>{$(id).textContent=e.text;$(id).className='eval '+e.cls});const f=[];if(m.hip<20)f.push('verminderte Hüftflexion');else if(m.hip>30)f.push('vermehrte Hüftflexion');if(m.knee>10)f.push('vermehrte Knieflexion');if(m.ankle<0)f.push('OSG plantarflexierter als Orientierung');else if(m.ankle>5)f.push('vermehrte OSG-Dorsalextension');$('icFinding').textContent=f.length?'IC · kameraseitiges Referenzbein: '+f.join(' · '):'IC · kameraseitiges Referenzbein: gemessene Pilotwerte im Orientierungsbereich.'}
+function xy(e){const r=icStage.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}function dst(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}function mid(a,b){return{x:(a.x+b.x)/2,y:(a.y+b.y)/2}}
+function beginGesture(){const a=[...touches.values()];if(a.length<2)return;const m=mid(a[0],a[1]),b=baseImageRect();gesture={d:dst(a[0],a[1]),z:icZoom,ax:(m.x-b.x-icPanX)/(b.w*icZoom),ay:(m.y-b.y-icPanY)/(b.h*icZoom)};dragKey=null}
+icCanvas.addEventListener('pointerdown',e=>{if(icImg.hidden)return;const q=xy(e);touches.set(e.pointerId,q);icCanvas.setPointerCapture(e.pointerId);if(touches.size>=2){beginGesture();e.preventDefault();return}let best=null,bd=22;Object.keys(icPts).forEach(k=>{const p=imageToScreen(icPts[k]),d=dst(p,q);if(d<bd){bd=d;best=k}});if(best){dragKey=best;e.preventDefault();return}if(setIndex<5){icPts[icKeys[setIndex]]=screenToImage(q.x,q.y);setIndex++;updateIcPrompt();drawIc();e.preventDefault()}});
+icCanvas.addEventListener('pointermove',e=>{if(!touches.has(e.pointerId))return;const q=xy(e);touches.set(e.pointerId,q);if(touches.size>=2){if(!gesture)beginGesture();const a=[...touches.values()],m=mid(a[0],a[1]),b=baseImageRect();icZoom=Math.max(1,Math.min(4,gesture.z*dst(a[0],a[1])/Math.max(1,gesture.d)));icPanX=m.x-b.x-gesture.ax*b.w*icZoom;icPanY=m.y-b.y-gesture.ay*b.h*icZoom;if(icZoom<=1.001){icZoom=1;icPanX=icPanY=0}applyView();e.preventDefault();return}if(dragKey){icPts[dragKey]=screenToImage(q.x,q.y);drawIc();e.preventDefault()}});
+function end(e){touches.delete(e.pointerId);if(touches.size<2)gesture=null;if(!touches.size)dragKey=null}icCanvas.addEventListener('pointerup',end);icCanvas.addEventListener('pointercancel',end);
+$('icReset').onclick=resetIcPoints;$('icUndo').onclick=()=>{if(setIndex>0){setIndex--;delete icPts[icKeys[setIndex]];updateIcPrompt();drawIc()}};$('icLoadFrame').onclick=loadIcFrame;window.addEventListener('resize',()=>{resizeIc();applyView()});
 
 renderPhases();upd();loadIcFrame();
 </script>
