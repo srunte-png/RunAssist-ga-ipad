@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="RunAssist GA">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon-512.png">
-<title>RunAssist GA iPad v0.5.8</title>
+<title>RunAssist GA iPad v0.5.9</title>
 <style>
 :root{--p:#168a82;--pd:#0d5f59;--soft:#eaf7f5;--line:#cfe0e1;--ink:#24383a;--muted:#6d7f82}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -63,7 +63,7 @@ input[type=file]{position:absolute;left:-9999px}.scrub{width:100%;margin:12px 0}
 </style>
 </head>
 <body>
-<header><div class="brand"><div><div class="logo"><span>Run</span>Assist</div><div class="note">GA · iPad PWA v0.5.8</div></div><div class="note">IC · Touch-Präzision</div></div></header>
+<header><div class="brand"><div><div class="logo"><span>Run</span>Assist</div><div class="note">GA · iPad PWA v0.5.9</div></div><div class="note">IC · Gestenmodus</div></div></header>
 <main>
 
 <section class="card">
@@ -119,8 +119,9 @@ input[type=file]{position:absolute;left:-9999px}.scrub{width:100%;margin:12px 0}
 <p class="note"><b>Referenzbein = immer das Bein auf der gefilmten Kameraseite.</b> Setze die anatomischen Referenzpunkte selbst. RunAssist berechnet erst nach vollständiger Markierung die bildbasierten 2D-Winkel.</p>
 <div class="icGrid">
 <div>
+<div id="icMode" class="status diag" style="margin:0 0 8px">Bildmodus · Doppeltippen, um den nächsten Referenzpunkt zu setzen.</div>
 <div id="icStage" class="icStage"><div id="icEmpty" class="note" style="color:#dfe8e8;padding:20px;text-align:center">Noch kein Initial-Contact-Frame gespeichert.</div><img id="icImage" alt="Initial Contact" hidden><canvas id="icCanvas"></canvas></div>
-<div class="precisionNote"><b>iPad-Steuerung:</b> 1 Finger = Referenzpunkt setzen oder verschieben · 2 Finger = Bild verschieben und zoomen. Kein Umschalten mehr nötig.</div>
+<div class="precisionNote"><b>iPad-Steuerung:</b> 1 Finger ziehen = Bild verschieben · 2 Finger = zoomen · Doppeltipp = nächsten Referenzpunkt aktivieren · danach 1× tippen = Punkt setzen.</div>
 <div class="icActions" style="margin-top:8px"><button id="icReset">↺ Referenzpunkte neu setzen</button><button id="icUndo">← Letzten Punkt löschen</button><button id="icLoadFrame" class="primary">IC-Frame aktualisieren</button></div>
 </div>
 <div class="icTools">
@@ -277,11 +278,18 @@ $('openCase').onchange=async e=>{
 
 
 const icStage=$('icStage'),icImg=$('icImage'),icCanvas=$('icCanvas'),icCtx=icCanvas.getContext('2d');
-let icPts={},dragKey=null,setIndex=0,icZoom=1,icPanX=0,icPanY=0,touches=new Map(),gesture=null;
+let icPts={},setIndex=0,icZoom=1,icPanX=0,icPanY=0,touches=new Map(),gesture=null;
+let pointArmed=false,lastTap=0,pendingTap=null,panStart=null,moved=false;
 const icKeys=['shoulder','hip','knee','ankle','forefoot'],icLabels={shoulder:'S',hip:'H',knee:'K',ankle:'A',forefoot:'F'},icNames={shoulder:'Schulter',hip:'Hüfte',knee:'Knie',ankle:'Sprunggelenk',forefoot:'Vorfuß'};
+
 function clearIcMeasurements(){$('hipVal').textContent='—';$('kneeVal').textContent='—';$('ankleVal').textContent='—';['hipEval','kneeEval','ankleEval'].forEach(id=>{$(id).textContent='Noch nicht gemessen';$(id).className='eval'});$('icFinding').textContent='Automatischer IC-Befund erscheint nach Setzen aller fünf Referenzpunkte.'}
-function updateIcPrompt(){if(setIndex<5)$('icPrompt').textContent=(setIndex+1)+'/5 · Bitte '+icNames[icKeys[setIndex]]+' am kameraseitigen Referenzbein antippen.';else $('icPrompt').textContent='✓ Alle Referenzpunkte gesetzt. Punkte können jetzt präzise verschoben werden.'}
-function resetIcPoints(){icPts={};setIndex=0;dragKey=null;clearIcMeasurements();updateIcPrompt();drawIc()}
+function updateMode(){
+ if(setIndex>=5){$('icMode').textContent='✓ Alle Referenzpunkte gesetzt · Bild kann weiter verschoben/ gezoomt werden.';pointArmed=false;return}
+ if(pointArmed)$('icMode').textContent='🎯 Referenzpunkt setzen: '+icNames[icKeys[setIndex]]+' · jetzt einmal auf die gewünschte Stelle tippen.';
+ else $('icMode').textContent='Bildmodus · 1 Finger verschiebt · 2 Finger zoomen · Doppeltipp aktiviert '+icNames[icKeys[setIndex]]+'.';
+}
+function updateIcPrompt(){if(setIndex<5)$('icPrompt').textContent=(setIndex+1)+'/5 · '+icNames[icKeys[setIndex]]+' als nächsten Referenzpunkt setzen.';else $('icPrompt').textContent='✓ Alle Referenzpunkte gesetzt.';updateMode()}
+function resetIcPoints(){icPts={};setIndex=0;pointArmed=false;clearIcMeasurements();updateIcPrompt();drawIc()}
 function resetView(){icZoom=1;icPanX=0;icPanY=0;applyView()}
 function loadIcFrame(){const ic=saved[0];if(!ic||!ic.image){icImg.hidden=true;$('icEmpty').hidden=false;resetIcPoints();return}$('icEmpty').hidden=true;icImg.hidden=false;icImg.onload=()=>{resizeIc();resetView();resetIcPoints()};icImg.src=ic.image;if(icImg.complete){resizeIc();resetView();resetIcPoints()}}
 function resizeIc(){const r=icStage.getBoundingClientRect(),d=Math.max(1,devicePixelRatio||1);icCanvas.width=Math.round(r.width*d);icCanvas.height=Math.round(r.height*d);icCtx.setTransform(d,0,0,d,0,0)}
@@ -294,11 +302,14 @@ function calcIc(){if(!icKeys.every(k=>icPts[k]))return null;const p={};icKeys.fo
 function classify(v,lo,hi,label){if(v<lo)return{text:(lo-v).toFixed(1)+'° unter Referenz · '+label+' vermindert',cls:'warn'};if(v>hi)return{text:(v-hi).toFixed(1)+'° über Referenz · '+label+' vermehrt',cls:'warn'};return{text:'im Orientierungsbereich',cls:'good'}}
 function drawIc(){const r=icStage.getBoundingClientRect();icCtx.clearRect(0,0,r.width,r.height);const keys=icKeys.filter(k=>icPts[k]),p={};keys.forEach(k=>p[k]=imageToScreen(icPts[k]));if(keys.length>1){icCtx.strokeStyle='rgba(255,255,255,.88)';icCtx.lineWidth=1.7;icCtx.beginPath();icCtx.moveTo(p[keys[0]].x,p[keys[0]].y);keys.slice(1).forEach(k=>icCtx.lineTo(p[k].x,p[k].y));icCtx.stroke()}keys.forEach(k=>{const q=p[k];icCtx.beginPath();icCtx.fillStyle='rgba(22,138,130,.65)';icCtx.arc(q.x,q.y,6,0,Math.PI*2);icCtx.fill();icCtx.strokeStyle='white';icCtx.lineWidth=1;icCtx.stroke();icCtx.beginPath();icCtx.moveTo(q.x-10,q.y);icCtx.lineTo(q.x+10,q.y);icCtx.moveTo(q.x,q.y-10);icCtx.lineTo(q.x,q.y+10);icCtx.stroke();icCtx.fillStyle='white';icCtx.font='bold 8px -apple-system';icCtx.textAlign='center';icCtx.fillText(icLabels[k],q.x,q.y-13)});const m=calcIc();if(!m){clearIcMeasurements();return}$('hipVal').textContent=m.hip.toFixed(1)+'°';$('kneeVal').textContent=m.knee.toFixed(1)+'°';$('ankleVal').textContent=(m.ankle>=0?'+':'')+m.ankle.toFixed(1)+'°';const es=[['hipEval',classify(m.hip,20,30,'Hüftflexion')],['kneeEval',classify(m.knee,0,10,'Knieflexion')],['ankleEval',classify(m.ankle,0,5,'Dorsalextension')]];es.forEach(([id,e])=>{$(id).textContent=e.text;$(id).className='eval '+e.cls});const f=[];if(m.hip<20)f.push('verminderte Hüftflexion');else if(m.hip>30)f.push('vermehrte Hüftflexion');if(m.knee>10)f.push('vermehrte Knieflexion');if(m.ankle<0)f.push('OSG plantarflexierter als Orientierung');else if(m.ankle>5)f.push('vermehrte OSG-Dorsalextension');$('icFinding').textContent=f.length?'IC · kameraseitiges Referenzbein: '+f.join(' · '):'IC · kameraseitiges Referenzbein: gemessene Pilotwerte im Orientierungsbereich.'}
 function xy(e){const r=icStage.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}function dst(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}function mid(a,b){return{x:(a.x+b.x)/2,y:(a.y+b.y)/2}}
-function beginGesture(){const a=[...touches.values()];if(a.length<2)return;const m=mid(a[0],a[1]),b=baseImageRect();gesture={d:dst(a[0],a[1]),z:icZoom,ax:(m.x-b.x-icPanX)/(b.w*icZoom),ay:(m.y-b.y-icPanY)/(b.h*icZoom)};dragKey=null}
-icCanvas.addEventListener('pointerdown',e=>{if(icImg.hidden)return;const q=xy(e);touches.set(e.pointerId,q);icCanvas.setPointerCapture(e.pointerId);if(touches.size>=2){beginGesture();e.preventDefault();return}let best=null,bd=22;Object.keys(icPts).forEach(k=>{const p=imageToScreen(icPts[k]),d=dst(p,q);if(d<bd){bd=d;best=k}});if(best){dragKey=best;e.preventDefault();return}if(setIndex<5){icPts[icKeys[setIndex]]=screenToImage(q.x,q.y);setIndex++;updateIcPrompt();drawIc();e.preventDefault()}});
-icCanvas.addEventListener('pointermove',e=>{if(!touches.has(e.pointerId))return;const q=xy(e);touches.set(e.pointerId,q);if(touches.size>=2){if(!gesture)beginGesture();const a=[...touches.values()],m=mid(a[0],a[1]),b=baseImageRect();icZoom=Math.max(1,Math.min(4,gesture.z*dst(a[0],a[1])/Math.max(1,gesture.d)));icPanX=m.x-b.x-gesture.ax*b.w*icZoom;icPanY=m.y-b.y-gesture.ay*b.h*icZoom;if(icZoom<=1.001){icZoom=1;icPanX=icPanY=0}applyView();e.preventDefault();return}if(dragKey){icPts[dragKey]=screenToImage(q.x,q.y);drawIc();e.preventDefault()}});
-function end(e){touches.delete(e.pointerId);if(touches.size<2)gesture=null;if(!touches.size)dragKey=null}icCanvas.addEventListener('pointerup',end);icCanvas.addEventListener('pointercancel',end);
-$('icReset').onclick=resetIcPoints;$('icUndo').onclick=()=>{if(setIndex>0){setIndex--;delete icPts[icKeys[setIndex]];updateIcPrompt();drawIc()}};$('icLoadFrame').onclick=loadIcFrame;window.addEventListener('resize',()=>{resizeIc();applyView()});
+function beginGesture(){const a=[...touches.values()];if(a.length<2)return;const m=mid(a[0],a[1]),b=baseImageRect();gesture={d:dst(a[0],a[1]),z:icZoom,ax:(m.x-b.x-icPanX)/(b.w*icZoom),ay:(m.y-b.y-icPanY)/(b.h*icZoom)};panStart=null;moved=true}
+function armPoint(){if(setIndex>=5)return;pointArmed=true;updateMode()}
+function placePoint(q){if(!pointArmed||setIndex>=5)return;icPts[icKeys[setIndex]]=screenToImage(q.x,q.y);setIndex++;pointArmed=false;updateIcPrompt();drawIc()}
+icCanvas.addEventListener('pointerdown',e=>{if(icImg.hidden)return;const q=xy(e);touches.set(e.pointerId,q);icCanvas.setPointerCapture(e.pointerId);moved=false;if(touches.size>=2){if(pendingTap){clearTimeout(pendingTap);pendingTap=null}beginGesture();e.preventDefault();return}panStart={x:q.x,y:q.y,px:icPanX,py:icPanY};e.preventDefault()});
+icCanvas.addEventListener('pointermove',e=>{if(!touches.has(e.pointerId))return;const q=xy(e);touches.set(e.pointerId,q);if(touches.size>=2){if(!gesture)beginGesture();const a=[...touches.values()],m=mid(a[0],a[1]),b=baseImageRect();icZoom=Math.max(1,Math.min(4,gesture.z*dst(a[0],a[1])/Math.max(1,gesture.d)));icPanX=m.x-b.x-gesture.ax*b.w*icZoom;icPanY=m.y-b.y-gesture.ay*b.h*icZoom;if(icZoom<=1.001){icZoom=1;icPanX=icPanY=0}applyView();e.preventDefault();return}if(panStart&&dst(q,{x:panStart.x,y:panStart.y})>5){moved=true;icPanX=panStart.px+(q.x-panStart.x);icPanY=panStart.py+(q.y-panStart.y);applyView();e.preventDefault()}});
+icCanvas.addEventListener('pointerup',e=>{const q=xy(e),wasMoved=moved;touches.delete(e.pointerId);if(touches.size<2)gesture=null;if(!touches.size)panStart=null;if(wasMoved)return;const now=Date.now();if(pointArmed){placePoint(q);lastTap=0;return}if(now-lastTap<320){if(pendingTap){clearTimeout(pendingTap);pendingTap=null}lastTap=0;armPoint();return}lastTap=now;pendingTap=setTimeout(()=>{pendingTap=null},340)});
+icCanvas.addEventListener('pointercancel',e=>{touches.delete(e.pointerId);gesture=null;panStart=null});
+$('icReset').onclick=resetIcPoints;$('icUndo').onclick=()=>{if(setIndex>0){setIndex--;delete icPts[icKeys[setIndex]];pointArmed=false;updateIcPrompt();drawIc()}};$('icLoadFrame').onclick=loadIcFrame;window.addEventListener('resize',()=>{resizeIc();applyView()});
 
 renderPhases();upd();loadIcFrame();
 </script>
