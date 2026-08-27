@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="RunAssist GA">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon-512.png">
-<title>RunAssist GA iPad v0.6.1</title>
+<title>RunAssist GA iPad v0.6.2</title>
 <style>
 :root{--p:#168a82;--pd:#0d5f59;--soft:#eaf7f5;--line:#cfe0e1;--ink:#24383a;--muted:#6d7f82}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -73,7 +73,7 @@ input[type=file]{position:absolute;left:-9999px}.scrub{width:100%;margin:12px 0}
 </style>
 </head>
 <body>
-<header><div class="brand"><div><div class="logo"><span>Run</span>Assist</div><div class="note">GA · iPad PWA v0.6.1</div></div><div class="note">IC · Beckenachse & Hüftmessung</div></div></header>
+<header><div class="brand"><div><div class="logo"><span>Run</span>Assist</div><div class="note">GA · iPad PWA v0.6.2</div></div><div class="note">IC · SIAS/SIPS Fix</div></div></header>
 <main>
 
 <section class="card">
@@ -376,7 +376,140 @@ icCanvas.addEventListener('pointerup',e=>{const q=xy(e),wasMoved=moved;touches.d
 icCanvas.addEventListener('pointercancel',e=>{touches.delete(e.pointerId);gesture=null;panStart=null});
 $('icReset').onclick=resetIcPoints;$('icUndo').onclick=()=>{if(setIndex>0){setIndex--;delete icPts[icKeys[setIndex]];pointArmed=false;updateIcPrompt();drawIc()}};$('icLoadFrame').onclick=loadIcFrame;window.addEventListener('resize',()=>{resizeIc();applyView()});
 
-// ---- v0.6.1 · Initial Contact Befund & Interpretation ----
+
+// ---- v0.6.2 · SIAS/SIPS Referenzpunkte + Beckenmessung ----
+function pelvisName(){return pelvisSetIndex===0?'SIAS':'SIPS'}
+function axisAngle(a,b){return Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI}
+function norm180(a){while(a>180)a-=360;while(a<-180)a+=360;return a}
+
+function updatePelvisUI(){
+  if(setIndex<5){
+    if(pointArmed)$('icMode').textContent='🎯 Referenzpunkt setzen: '+icNames[icKeys[setIndex]]+' · jetzt einmal tippen.';
+    else $('icMode').textContent='Bildmodus · Doppeltipp aktiviert '+icNames[icKeys[setIndex]]+'.';
+    return;
+  }
+  if(pelvisMode==='visible' && pelvisSetIndex<2){
+    if(pointArmed)$('icMode').textContent='🎯 Referenzpunkt setzen: '+pelvisName()+' · jetzt einmal tippen.';
+    else $('icMode').textContent='Beckenmessung · Doppeltipp aktiviert '+pelvisName()+'.';
+    $('icPrompt').textContent='Beckenmessung · '+pelvisName()+' als nächsten Referenzpunkt setzen.';
+    return;
+  }
+  $('icMode').textContent='✓ Alle benötigten Referenzpunkte gesetzt.';
+  $('icPrompt').textContent='✓ Alle Referenzpunkte gesetzt.';
+}
+
+const baseArmPoint_v062=armPoint;
+armPoint=function(){
+  if(setIndex<5){baseArmPoint_v062();return}
+  if(pelvisMode==='visible' && pelvisSetIndex<2){
+    pointArmed=true;
+    updatePelvisUI();
+  }
+};
+
+const basePlacePoint_v062=placePoint;
+placePoint=function(q){
+  if(setIndex<5){basePlacePoint_v062(q);return}
+  if(pointArmed && pelvisMode==='visible' && pelvisSetIndex<2){
+    const key=pelvisSetIndex===0?'sias':'sips';
+    icPts[key]=screenToImage(q.x,q.y);
+    pelvisSetIndex++;
+    pointArmed=false;
+    updatePelvisUI();
+    drawIc();
+  }
+};
+
+function drawPelvisPoint(key,label){
+  if(!icPts[key])return;
+  const q=imageToScreen(icPts[key]);
+  icCtx.beginPath();icCtx.fillStyle='rgba(180,85,20,.75)';icCtx.arc(q.x,q.y,6,0,Math.PI*2);icCtx.fill();
+  icCtx.strokeStyle='white';icCtx.lineWidth=1;icCtx.stroke();
+  icCtx.beginPath();icCtx.moveTo(q.x-10,q.y);icCtx.lineTo(q.x+10,q.y);icCtx.moveTo(q.x,q.y-10);icCtx.lineTo(q.x,q.y+10);icCtx.stroke();
+  icCtx.fillStyle='white';icCtx.font='bold 8px -apple-system';icCtx.textAlign='center';icCtx.fillText(label,q.x,q.y-13);
+}
+
+function updatePelvisAnalysis(){
+  const shoulder=icPts.shoulder&&imageToScreen(icPts.shoulder);
+  const hip=icPts.hip&&imageToScreen(icPts.hip);
+  const knee=icPts.knee&&imageToScreen(icPts.knee);
+
+  if(shoulder&&hip&&knee){
+    const trunk=axisAngle(hip,shoulder),femur=axisAngle(hip,knee);
+    let s=Math.abs(norm180(femur-trunk));
+    if(s>180)s=360-s;
+    $('surrogateHipVal').textContent=s.toFixed(1)+'°';
+    $('surrogateHipEval').textContent=pelvisMode==='hidden'?'Ersatzgröße · keine echte Hüftflexion':'Surrogat nur ergänzend';
+  }
+
+  if(pelvisMode==='visible' && icPts.sias && icPts.sips && hip && knee){
+    const sias=imageToScreen(icPts.sias),sips=imageToScreen(icPts.sips);
+    const pelvisAxis=axisAngle(sips,sias);
+    const tilt=Math.abs(norm180(pelvisAxis));
+    $('pelvisTiltVal').textContent=tilt.toFixed(1)+'°';
+    $('pelvisTiltEval').textContent='bildbasierte SIAS–SIPS-Neigung';
+
+    const pelvisPerp=pelvisAxis+90, femur=axisAngle(hip,knee);
+    let h=Math.abs(norm180(femur-pelvisPerp));
+    if(h>90)h=180-h;
+    h=Math.abs(h);
+    $('trueHipVal').textContent=h.toFixed(1)+'°';
+    $('trueHipEval').textContent='beckenbezogene 2D-Hüftmessung';
+    $('pelvisValidity').innerHTML='<b>Validität:</b> Messweg A · Hüftwinkel aus SIAS–SIPS-Beckenachse und Femurachse berechnet.';
+  }else if(pelvisMode==='hidden'){
+    $('pelvisTiltVal').textContent='—';
+    $('pelvisTiltEval').textContent='Becken verdeckt';
+    $('trueHipVal').textContent='—';
+    $('trueHipEval').textContent='nicht valide bestimmbar';
+    $('pelvisValidity').innerHTML='<b>Validität:</b> Beckenstellung nicht sicher beurteilbar. Rumpf-Femur-Winkel nur als Surrogat.';
+  }else{
+    $('pelvisTiltVal').textContent='—';
+    $('pelvisTiltEval').textContent='SIAS/SIPS noch unvollständig';
+    $('trueHipVal').textContent='—';
+    $('trueHipEval').textContent='noch nicht valide bestimmbar';
+    $('pelvisValidity').innerHTML='<b>Validität:</b> SIAS und SIPS noch nicht vollständig gesetzt.';
+  }
+}
+
+const baseDrawIc_v062=drawIc;
+drawIc=function(){
+  baseDrawIc_v062();
+  if(icPts.sias&&icPts.sips){
+    const a=imageToScreen(icPts.sias),b=imageToScreen(icPts.sips);
+    icCtx.strokeStyle='rgba(255,180,110,.95)';icCtx.lineWidth=2;
+    icCtx.beginPath();icCtx.moveTo(a.x,a.y);icCtx.lineTo(b.x,b.y);icCtx.stroke();
+  }
+  drawPelvisPoint('sias','SIAS');
+  drawPelvisPoint('sips','SIPS');
+  updatePelvisAnalysis();
+};
+
+function setPelvisMode(mode){
+  pelvisMode=mode;
+  pointArmed=false;
+  if(mode==='hidden'){
+    delete icPts.sias;delete icPts.sips;pelvisSetIndex=0;
+    $('pelvisModeInfo').textContent='Messweg B aktiv · Becken verdeckt. Rumpf-Femur-Winkel wird als Surrogat verwendet.';
+  }else{
+    pelvisSetIndex=(icPts.sias?1:0)+(icPts.sips?1:0);
+    $('pelvisModeInfo').textContent='Messweg A aktiv · Nach den fünf Standardpunkten: Doppeltipp aktiviert SIAS, danach SIPS.';
+  }
+  $('pelvisVisible').classList.toggle('primary',mode==='visible');
+  $('pelvisHidden').classList.toggle('primary',mode==='hidden');
+  updatePelvisUI();
+  drawIc();
+}
+
+$('pelvisVisible').onclick=()=>setPelvisMode('visible');
+$('pelvisHidden').onclick=()=>setPelvisMode('hidden');
+
+const baseUpdateIcPrompt_v062=updateIcPrompt;
+updateIcPrompt=function(){
+  baseUpdateIcPrompt_v062();
+  if(setIndex>=5)updatePelvisUI();
+};
+
+// ---- v0.6.2 · Initial Contact Befund & Interpretation ----
 const icQualIds=['qHeel','qForefoot','qPelvisDrop','qPelvisRot','qTrunkLean','qStepLength'];
 
 function currentIcMeasures(){
