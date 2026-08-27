@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="RunAssist GA">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon-512.png">
-<title>RunAssist GA iPad v0.6.0</title>
+<title>RunAssist GA iPad v0.6.1</title>
 <style>
 :root{--p:#168a82;--pd:#0d5f59;--soft:#eaf7f5;--line:#cfe0e1;--ink:#24383a;--muted:#6d7f82}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -73,7 +73,7 @@ input[type=file]{position:absolute;left:-9999px}.scrub{width:100%;margin:12px 0}
 </style>
 </head>
 <body>
-<header><div class="brand"><div><div class="logo"><span>Run</span>Assist</div><div class="note">GA · iPad PWA v0.6.0</div></div><div class="note">IC · Komplettanalyse</div></div></header>
+<header><div class="brand"><div><div class="logo"><span>Run</span>Assist</div><div class="note">GA · iPad PWA v0.6.1</div></div><div class="note">IC · Beckenachse & Hüftmessung</div></div></header>
 <main>
 
 <section class="card">
@@ -144,6 +144,23 @@ input[type=file]{position:absolute;left:-9999px}.scrub{width:100%;margin:12px 0}
 </div></div>
 </section>
 
+
+
+<section class="card">
+<h2>6b · Initial Contact · Beckenachse & Hüftmessung</h2>
+<p class="note">Zwei Messwege: <b>A</b> echte beckenbezogene Hüftmessung über SIAS–SIPS, wenn beide Punkte sicher sichtbar sind. <b>B</b> Ersatzmessung über Rumpf- und Femurachse, wenn das Becken z. B. durch die Laufbandtraverse verdeckt ist.</p>
+<div class="casebar" style="margin-top:10px">
+<button id="pelvisVisible" class="primary">A · SIAS/SIPS sichtbar</button>
+<button id="pelvisHidden">B · Becken verdeckt</button>
+</div>
+<div id="pelvisModeInfo" class="status diag">Messweg A aktiv · Doppeltipp aktiviert SIAS, danach SIPS.</div>
+<div class="measureGrid" style="margin-top:10px">
+<div class="measure"><div class="measureHead"><h3>Beckenneigung</h3><span class="badge">SIAS–SIPS</span></div><div class="measureValue" id="pelvisTiltVal">—</div><div class="eval" id="pelvisTiltEval">Noch nicht gemessen</div></div>
+<div class="measure"><div class="measureHead"><h3>Hüftflexion</h3><span class="badge">beckenbezogen</span></div><div class="measureValue" id="trueHipVal">—</div><div class="eval" id="trueHipEval">Noch nicht valide bestimmbar</div></div>
+<div class="measure"><div class="measureHead"><h3>Rumpf-Femur-Winkel</h3><span class="badge">Surrogat</span></div><div class="measureValue" id="surrogateHipVal">—</div><div class="eval" id="surrogateHipEval">Nur bei verdecktem Becken als Ersatzgröße</div></div>
+</div>
+<div id="pelvisValidity" class="reportBox" style="margin-top:10px"><b>Validität:</b> SIAS und SIPS noch nicht gesetzt.</div>
+</section>
 
 <section class="card">
 <h2>7 · Initial Contact · Befund & Interpretation</h2>
@@ -327,7 +344,8 @@ $('openCase').onchange=async e=>{
 const icStage=$('icStage'),icImg=$('icImage'),icCanvas=$('icCanvas'),icCtx=icCanvas.getContext('2d');
 let icPts={},setIndex=0,icZoom=1,icPanX=0,icPanY=0,touches=new Map(),gesture=null;
 let pointArmed=false,lastTap=0,pendingTap=null,panStart=null,moved=false;
-const icKeys=['shoulder','hip','knee','ankle','forefoot'],icLabels={shoulder:'S',hip:'H',knee:'K',ankle:'A',forefoot:'F'},icNames={shoulder:'Schulter',hip:'Hüfte',knee:'Knie',ankle:'Sprunggelenk',forefoot:'Vorfuß'};
+const icKeys=['shoulder','hip','knee','ankle','forefoot'],icLabels={shoulder:'S',hip:'H',knee:'K',ankle:'A',forefoot:'F',sias:'SIAS',sips:'SIPS'},icNames={shoulder:'Schulter',hip:'Hüfte',knee:'Knie',ankle:'Sprunggelenk',forefoot:'Vorfuß',sias:'SIAS',sips:'SIPS'};
+let pelvisMode='visible',pelvisSetIndex=0;
 
 function clearIcMeasurements(){$('hipVal').textContent='—';$('kneeVal').textContent='—';$('ankleVal').textContent='—';['hipEval','kneeEval','ankleEval'].forEach(id=>{$(id).textContent='Noch nicht gemessen';$(id).className='eval'});$('icFinding').textContent='Automatischer IC-Befund erscheint nach Setzen aller fünf Referenzpunkte.'}
 function updateMode(){
@@ -347,7 +365,7 @@ function screenToImage(x,y){const b=baseImageRect();return{x:Math.max(0,Math.min
 function angleABC(a,b,c){const u={x:a.x-b.x,y:a.y-b.y},w={x:c.x-b.x,y:c.y-b.y},d=u.x*w.x+u.y*w.y,n=Math.hypot(u.x,u.y)*Math.hypot(w.x,w.y);return Math.acos(Math.max(-1,Math.min(1,d/n)))*180/Math.PI}
 function calcIc(){if(!icKeys.every(k=>icPts[k]))return null;const p={};icKeys.forEach(k=>p[k]=imageToScreen(icPts[k]));return{hip:Math.max(0,180-angleABC(p.shoulder,p.hip,p.knee)),knee:Math.max(0,180-angleABC(p.hip,p.knee,p.ankle)),ankle:90-angleABC(p.knee,p.ankle,p.forefoot)}}
 function classify(v,lo,hi,label){if(v<lo)return{text:(lo-v).toFixed(1)+'° unter Referenz · '+label+' vermindert',cls:'warn'};if(v>hi)return{text:(v-hi).toFixed(1)+'° über Referenz · '+label+' vermehrt',cls:'warn'};return{text:'im Orientierungsbereich',cls:'good'}}
-function drawIc(){const r=icStage.getBoundingClientRect();icCtx.clearRect(0,0,r.width,r.height);const keys=icKeys.filter(k=>icPts[k]),p={};keys.forEach(k=>p[k]=imageToScreen(icPts[k]));if(keys.length>1){icCtx.strokeStyle='rgba(255,255,255,.88)';icCtx.lineWidth=1.7;icCtx.beginPath();icCtx.moveTo(p[keys[0]].x,p[keys[0]].y);keys.slice(1).forEach(k=>icCtx.lineTo(p[k].x,p[k].y));icCtx.stroke()}keys.forEach(k=>{const q=p[k];icCtx.beginPath();icCtx.fillStyle='rgba(22,138,130,.65)';icCtx.arc(q.x,q.y,6,0,Math.PI*2);icCtx.fill();icCtx.strokeStyle='white';icCtx.lineWidth=1;icCtx.stroke();icCtx.beginPath();icCtx.moveTo(q.x-10,q.y);icCtx.lineTo(q.x+10,q.y);icCtx.moveTo(q.x,q.y-10);icCtx.lineTo(q.x,q.y+10);icCtx.stroke();icCtx.fillStyle='white';icCtx.font='bold 8px -apple-system';icCtx.textAlign='center';icCtx.fillText(icLabels[k],q.x,q.y-13)});const m=calcIc();if(!m){clearIcMeasurements();return}$('hipVal').textContent=m.hip.toFixed(1)+'°';$('kneeVal').textContent=m.knee.toFixed(1)+'°';$('ankleVal').textContent=(m.ankle>=0?'+':'')+m.ankle.toFixed(1)+'°';const es=[['hipEval',classify(m.hip,20,30,'Hüftflexion')],['kneeEval',classify(m.knee,0,10,'Knieflexion')],['ankleEval',classify(m.ankle,0,5,'Dorsalextension')]];es.forEach(([id,e])=>{$(id).textContent=e.text;$(id).className='eval '+e.cls});const f=[];if(m.hip<20)f.push('verminderte Hüftflexion');else if(m.hip>30)f.push('vermehrte Hüftflexion');if(m.knee>10)f.push('vermehrte Knieflexion');if(m.ankle<0)f.push('OSG plantarflexierter als Orientierung');else if(m.ankle>5)f.push('vermehrte OSG-Dorsalextension');$('icFinding').textContent=f.length?'IC · kameraseitiges Referenzbein: '+f.join(' · '):'IC · kameraseitiges Referenzbein: gemessene Pilotwerte im Orientierungsbereich.'}
+function drawIc(){const r=icStage.getBoundingClientRect();icCtx.clearRect(0,0,r.width,r.height);const keys=[...icKeys,'sias','sips'].filter(k=>icPts[k]),p={};keys.forEach(k=>p[k]=imageToScreen(icPts[k]));if(keys.length>1){icCtx.strokeStyle='rgba(255,255,255,.88)';icCtx.lineWidth=1.7;icCtx.beginPath();icCtx.moveTo(p[keys[0]].x,p[keys[0]].y);keys.slice(1).forEach(k=>icCtx.lineTo(p[k].x,p[k].y));icCtx.stroke()}keys.forEach(k=>{const q=p[k];icCtx.beginPath();icCtx.fillStyle='rgba(22,138,130,.65)';icCtx.arc(q.x,q.y,6,0,Math.PI*2);icCtx.fill();icCtx.strokeStyle='white';icCtx.lineWidth=1;icCtx.stroke();icCtx.beginPath();icCtx.moveTo(q.x-10,q.y);icCtx.lineTo(q.x+10,q.y);icCtx.moveTo(q.x,q.y-10);icCtx.lineTo(q.x,q.y+10);icCtx.stroke();icCtx.fillStyle='white';icCtx.font='bold 8px -apple-system';icCtx.textAlign='center';icCtx.fillText(icLabels[k],q.x,q.y-13)});const m=calcIc();if(!m){clearIcMeasurements();return}$('hipVal').textContent=m.hip.toFixed(1)+'°';$('kneeVal').textContent=m.knee.toFixed(1)+'°';$('ankleVal').textContent=(m.ankle>=0?'+':'')+m.ankle.toFixed(1)+'°';const es=[['hipEval',classify(m.hip,20,30,'Hüftflexion')],['kneeEval',classify(m.knee,0,10,'Knieflexion')],['ankleEval',classify(m.ankle,0,5,'Dorsalextension')]];es.forEach(([id,e])=>{$(id).textContent=e.text;$(id).className='eval '+e.cls});const f=[];if(m.hip<20)f.push('verminderte Hüftflexion');else if(m.hip>30)f.push('vermehrte Hüftflexion');if(m.knee>10)f.push('vermehrte Knieflexion');if(m.ankle<0)f.push('OSG plantarflexierter als Orientierung');else if(m.ankle>5)f.push('vermehrte OSG-Dorsalextension');$('icFinding').textContent=f.length?'IC · kameraseitiges Referenzbein: '+f.join(' · '):'IC · kameraseitiges Referenzbein: gemessene Pilotwerte im Orientierungsbereich.'}
 function xy(e){const r=icStage.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}function dst(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}function mid(a,b){return{x:(a.x+b.x)/2,y:(a.y+b.y)/2}}
 function beginGesture(){const a=[...touches.values()];if(a.length<2)return;const m=mid(a[0],a[1]),b=baseImageRect();gesture={d:dst(a[0],a[1]),z:icZoom,ax:(m.x-b.x-icPanX)/(b.w*icZoom),ay:(m.y-b.y-icPanY)/(b.h*icZoom)};panStart=null;moved=true}
 function armPoint(){if(setIndex>=5)return;pointArmed=true;updateMode()}
@@ -358,7 +376,7 @@ icCanvas.addEventListener('pointerup',e=>{const q=xy(e),wasMoved=moved;touches.d
 icCanvas.addEventListener('pointercancel',e=>{touches.delete(e.pointerId);gesture=null;panStart=null});
 $('icReset').onclick=resetIcPoints;$('icUndo').onclick=()=>{if(setIndex>0){setIndex--;delete icPts[icKeys[setIndex]];pointArmed=false;updateIcPrompt();drawIc()}};$('icLoadFrame').onclick=loadIcFrame;window.addEventListener('resize',()=>{resizeIc();applyView()});
 
-// ---- v0.6.0 · Initial Contact Befund & Interpretation ----
+// ---- v0.6.1 · Initial Contact Befund & Interpretation ----
 const icQualIds=['qHeel','qForefoot','qPelvisDrop','qPelvisRot','qTrunkLean','qStepLength'];
 
 function currentIcMeasures(){
