@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="RunAssist GA">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon-512.png">
-<title>RunAssist GA iPad v0.7.1</title>
+<title>RunAssist GA iPad v0.7.3</title>
 <style>
 :root{--p:#168a82;--pd:#0d5f59;--soft:#eaf7f5;--line:#cfe0e1;--ink:#24383a;--muted:#6d7f82}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -85,10 +85,37 @@ input[type=file]{position:absolute;left:-9999px}.scrub{width:100%;margin:12px 0}
 .confCell b{display:block;font-size:12px;color:var(--pd)}
 @media(max-width:700px){.autoActions{grid-template-columns:1fr}.confList{grid-template-columns:repeat(2,1fr)}}
 
+
+/* v0.7.3 · sichtbare Tipp-Quittierung */
+button{position:relative;transition:background-color .12s ease,transform .08s ease,box-shadow .12s ease}
+button.tapAck{background:#2478d4!important;color:#fff!important;box-shadow:0 0 0 3px rgba(36,120,212,.18)!important;transform:scale(.985)}
+button.tapAck::after{content:"✓";position:absolute;right:9px;top:50%;transform:translateY(-50%);font-weight:900;font-size:16px}
+.confirmBox{margin-top:9px;padding:10px;border:1px solid var(--line);border-radius:12px;background:#f7fbfb}
+.confirmState{font-size:11px;line-height:1.4;margin-top:7px}
+.confirmState.pending{color:#8a5a00}.confirmState.ok{color:#257246;font-weight:700}
+.correctionRow{display:grid;grid-template-columns:1fr 1.2fr;gap:8px;margin-top:8px}
+.correctionRow select{min-height:42px;border:1px solid var(--line);border-radius:10px;background:#fff;padding:0 10px;font:inherit}
+.lockedMeasure{opacity:.5}
+@media(max-width:700px){.correctionRow{grid-template-columns:1fr}}
+
+/* v0.7.3 · IC-Zyklus-Serie */
+.seriesGrid{display:grid;grid-template-columns:1.15fr .85fr;gap:12px}
+.seriesActions{display:grid;grid-template-columns:1.3fr .7fr;gap:8px;margin:8px 0}
+.seriesTable{width:100%;border-collapse:collapse;font-size:10.5px}
+.seriesTable th,.seriesTable td{border-bottom:1px solid var(--line);padding:7px 5px;text-align:right}
+.seriesTable th:first-child,.seriesTable td:first-child{text-align:left}
+.seriesTable tr.selected{background:#eaf7f5}
+.seriesTable button{padding:5px 7px;min-height:30px;font-size:10px}
+.seriesStats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:8px}
+.seriesStat{border:1px solid var(--line);border-radius:10px;padding:8px;background:#fff;text-align:center}
+.seriesStat b{display:block;font-size:15px;color:var(--pd)}
+.cycleChoices{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:8px}
+.cycleChoices button.active{background:var(--pd);color:#fff}
+@media(max-width:760px){.seriesGrid{grid-template-columns:1fr}.seriesActions,.cycleChoices{grid-template-columns:1fr}.seriesStats{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-<header><div class="brand"><div><div class="logo"><span>Run</span>Assist</div><div class="note">GA · iPad PWA v0.7.1</div></div><div class="note">IC · Auto-Referenzpunkte Safari-Fix</div></div></header>
+<header><div class="brand"><div><div class="logo"><span>Run</span>Assist</div><div class="note">GA · iPad PWA v0.7.3</div></div><div class="note">IC · Zyklus-Serie</div></div></header>
 <main>
 
 <section class="card">
@@ -140,6 +167,41 @@ input[type=file]{position:absolute;left:-9999px}.scrub{width:100%;margin:12px 0}
 </section>
 
 
+
+<section class="card">
+<h2>5c · IC-Zyklus-Serie · mehrere Schritte vergleichen</h2>
+<p class="note">Nach bestätigten Referenzpunkten kannst du den aktuellen IC als eigenen Schritt in die Serie übernehmen. RunAssist zeigt die Streuung und schlägt einen <b>typischen</b> sowie einen <b>auffälligen</b> Schritt vor. Die klinische Auswahl bleibt bei dir.</p>
+<div class="seriesGrid">
+ <div>
+   <div class="seriesActions">
+     <button id="addIcCycle" class="primary">＋ Bestätigten IC zur Serie hinzufügen</button>
+     <button id="clearIcSeries">↺ Serie leeren</button>
+   </div>
+   <div id="seriesStatus" class="status diag">Noch keine IC-Schritte in der Serie.</div>
+   <div style="overflow:auto;margin-top:8px">
+    <table class="seriesTable">
+      <thead><tr><th>Schritt</th><th>Hüfte</th><th>Knie</th><th>OSG</th><th>Auswahl</th></tr></thead>
+      <tbody id="seriesBody"></tbody>
+    </table>
+   </div>
+ </div>
+ <div>
+   <b>Serienübersicht</b>
+   <div class="seriesStats">
+     <div class="seriesStat"><b id="seriesCount">0</b>Schritte</div>
+     <div class="seriesStat"><b id="seriesKneeRange">—</b>Knie-Spannweite</div>
+     <div class="seriesStat"><b id="seriesAnkleRange">—</b>OSG-Spannweite</div>
+   </div>
+   <div class="cycleChoices">
+     <button id="chooseTypical">◎ Typisch</button>
+     <button id="chooseOutlier">△ Auffällig</button>
+     <button id="chooseManual">☝ Therapeutisch</button>
+   </div>
+   <div id="cycleChoiceInfo" class="autoStatus">Mit mindestens drei Schritten kann RunAssist einen typischen und einen auffälligsten Schritt vorschlagen.</div>
+ </div>
+</div>
+</section>
+
 <section class="card">
 <h2>6 · Initial Contact · automatische Referenzpunkt-Vorschläge</h2>
 <div class="autoBox">
@@ -156,9 +218,9 @@ input[type=file]{position:absolute;left:-9999px}.scrub{width:100%;margin:12px 0}
     <div class="confCell"><b id="confFoot">—</b>Vorfuß</div>
   </div>
   <div class="autoLegend">
-    <span><i class="dot high"></i>hoch ≥75%</span>
-    <span><i class="dot mid"></i>mittel 50–74%</span>
-    <span><i class="dot low"></i>niedrig &lt;50% · bitte prüfen</span>
+    <span><i class="dot high"></i>Erkennung hoch ≥75%</span>
+    <span><i class="dot mid"></i>Erkennung mittel 50–74%</span>
+    <span><i class="dot low"></i>Erkennung niedrig &lt;50% · bitte prüfen</span>
   </div>
   <p class="note" style="margin-bottom:0">Die Automatik ist nur ein Vorschlag. Die klinische Freigabe bleibt beim Untersucher. SIAS/SIPS werden nicht automatisch gesetzt.</p>
 </div>
@@ -173,8 +235,22 @@ input[type=file]{position:absolute;left:-9999px}.scrub{width:100%;margin:12px 0}
 <div id="icStage" class="icStage"><div id="icEmpty" class="note" style="color:#dfe8e8;padding:20px;text-align:center">Noch kein Initial-Contact-Frame gespeichert.</div><img id="icImage" alt="Initial Contact" hidden><canvas id="icCanvas"></canvas><canvas id="icLoupe" width="300" height="300"></canvas><canvas id="icLoupeCross" width="300" height="300"></canvas></div>
 <div class="precisionNote"><b>iPad-Steuerung:</b> 1 Finger ziehen = Bild verschieben · 2 Finger = zoomen · Doppeltipp = nächsten Referenzpunkt aktivieren · danach 1× tippen = Punkt setzen.</div>
 
-<div class="icActions" style="margin-top:8px">
-  <button id="correctAutoPoint">🎯 Referenzpunkt korrigieren</button>
+<div class="confirmBox">
+  <b>Referenzpunkte prüfen</b>
+  <div class="correctionRow">
+    <select id="correctionTarget" aria-label="Referenzpunkt zur Korrektur">
+      <option value="shoulder">Schulter</option>
+      <option value="hip">Hüfte</option>
+      <option value="knee">Knie</option>
+      <option value="ankle">Sprunggelenk</option>
+      <option value="forefoot">Vorfuß</option>
+    </select>
+    <button id="correctAutoPoint">🎯 Ausgewählten Punkt korrigieren</button>
+  </div>
+  <div class="icActions" style="margin-top:8px">
+    <button id="confirmReferencePoints" class="primary">✓ Referenzpunkte bestätigen</button>
+  </div>
+  <div id="referenceConfirmState" class="confirmState pending">Noch nicht bestätigt · Winkel und klinischer IC-Befund sind gesperrt.</div>
 </div>
 <div class="icActions" style="margin-top:8px"><button id="icReset">↺ Referenzpunkte neu setzen</button><button id="icUndo">← Letzten Punkt löschen</button><button id="icLoadFrame" class="primary">IC-Frame aktualisieren</button></div>
 </div>
@@ -495,7 +571,7 @@ $('icReset').onclick=resetIcPoints;$('icUndo').onclick=()=>{
 };$('icLoadFrame').onclick=loadIcFrame;window.addEventListener('resize',()=>{resizeIc();applyView()});
 
 
-// ---- v0.7.1 · SIAS/SIPS Referenzpunkte + Beckenmessung ----
+// ---- v0.7.3 · SIAS/SIPS Referenzpunkte + Beckenmessung ----
 function pelvisName(){return pelvisSetIndex===0?'SIAS':'SIPS'}
 function axisAngle(a,b){return Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI}
 function norm180(a){while(a>180)a-=360;while(a<-180)a+=360;return a}
@@ -627,7 +703,7 @@ updateIcPrompt=function(){
   if(setIndex>=5)updatePelvisUI();
 };
 
-// ---- v0.7.1 · Initial Contact Befund & Interpretation ----
+// ---- v0.7.3 · Initial Contact Befund & Interpretation ----
 const icQualIds=['qHeel','qForefoot','qPelvisDrop','qPelvisRot','qTrunkLean','qStepLength'];
 
 function currentIcMeasures(){
@@ -711,7 +787,7 @@ buildCase = function(){
   return data;
 };
 
-// ---- v0.7.1 · automatische Referenzpunkt-Vorschläge ----
+// ---- v0.7.3 · automatische Referenzpunkt-Vorschläge ----
 function confPct(v){return Number.isFinite(v)?Math.round(v*100)+'%':'—'}
 function confClass(v){return v>=.75?'high':v>=.5?'mid':'low'}
 function setConf(id,v){
@@ -841,30 +917,279 @@ if(typeof buildCase==='function'){
  };
 }
 
-let correctionIndex=0;
+
 if($('correctAutoPoint')){
  $('correctAutoPoint').onclick=()=>{
-   const k=icKeys[correctionIndex%icKeys.length];
-   // Remove only this point, arm placement for the same anatomical target.
+   const k=$('correctionTarget').value;
+   if(!icKeys.includes(k))return;
    delete icPts[k];
-   const originalSetIndex=setIndex;
    setIndex=icKeys.indexOf(k);
    pointArmed=true;
+   $('referenceConfirmState').textContent='Punktkorrektur aktiv · '+icNames[k]+' mit Lupe setzen und anschließend erneut bestätigen.';
+   $('referenceConfirmState').className='confirmState pending';
    $('icMode').textContent='🎯 Korrektur: '+icNames[k]+' · Finger auflegen, mit Lupe fein positionieren und loslassen.';
    const once=()=>{
      if(icPts[k]){
        setIndex=5;
-       correctionIndex=(correctionIndex+1)%icKeys.length;
-       $('correctAutoPoint').textContent='🎯 Nächsten Punkt korrigieren: '+icNames[icKeys[correctionIndex]];
        icCanvas.removeEventListener('pointerup',once);
+       drawIc();
      }
    };
    icCanvas.addEventListener('pointerup',once);
    drawIc();
  };
- $('correctAutoPoint').textContent='🎯 Referenzpunkt korrigieren: Schulter';
 }
 
+
+// ---- v0.7.3 · klinische Freigabe der Referenzpunkte ----
+let confirmedReferenceSignature='';
+
+function referenceSignature(){
+ const keys=['shoulder','hip','knee','ankle','forefoot'];
+ return keys.map(k=>{
+   const p=icPts?.[k];
+   return p ? k+':'+Number(p.x).toFixed(6)+','+Number(p.y).toFixed(6) : k+':-';
+ }).join('|');
+}
+function referencesComplete(){
+ return ['shoulder','hip','knee','ankle','forefoot'].every(k=>icPts?.[k]);
+}
+function referencesConfirmed(){
+ return referencesComplete() && confirmedReferenceSignature===referenceSignature();
+}
+function updateReferenceConfirmationUI(){
+ const el=$('referenceConfirmState');
+ if(!el)return;
+ if(referencesConfirmed()){
+   el.textContent='✓ Referenzpunkte klinisch bestätigt · Winkel und IC-Befund freigegeben.';
+   el.className='confirmState ok';
+ }else{
+   el.textContent=referencesComplete()
+     ?'Referenzpunkte vorhanden, aber noch nicht bestätigt · bitte prüfen/korrigieren und bestätigen.'
+     :'Referenzpunkte unvollständig · Winkel und klinischer IC-Befund sind gesperrt.';
+   el.className='confirmState pending';
+ }
+}
+$('confirmReferencePoints').onclick=()=>{
+ if(!referencesComplete()){
+   $('referenceConfirmState').textContent='Bestätigung nicht möglich · zuerst alle fünf Referenzpunkte setzen.';
+   $('referenceConfirmState').className='confirmState pending';
+   return;
+ }
+ confirmedReferenceSignature=referenceSignature();
+ updateReferenceConfirmationUI();
+ drawIc();
+};
+
+// Wrap the final drawing routine: geometry may be shown, but clinical values remain locked
+// until the exact current set of five points has been confirmed.
+const drawIcBeforeConfirmGate_v072=drawIc;
+drawIc=function(){
+ drawIcBeforeConfirmGate_v072();
+ if(!referencesConfirmed()){
+   clearIcMeasurements();
+   $('icFinding').textContent='IC-Befund gesperrt · Referenzpunkte zuerst prüfen und bestätigen.';
+   $('hipVal').textContent='🔒';
+   $('kneeVal').textContent='🔒';
+   $('ankleVal').textContent='🔒';
+ }
+ updateReferenceConfirmationUI();
+};
+
+// Gate pelvis-derived clinical outputs as well.
+const updatePelvisAnalysisBeforeConfirm_v072=updatePelvisAnalysis;
+updatePelvisAnalysis=function(){
+ if(!referencesConfirmed()){
+   $('surrogateHipVal').textContent='🔒';
+   $('surrogateHipEval').textContent='Referenzpunkte noch nicht bestätigt';
+   $('pelvisTiltVal').textContent=icPts.sias&&icPts.sips?'—':'—';
+   $('pelvisTiltEval').textContent='Freigabe ausstehend';
+   $('trueHipVal').textContent='🔒';
+   $('trueHipEval').textContent='Referenzpunkte noch nicht bestätigt';
+   $('pelvisValidity').innerHTML='<b>Validität:</b> Klinische Winkelberechnung erst nach Bestätigung der fünf Standard-Referenzpunkte.';
+   return;
+ }
+ updatePelvisAnalysisBeforeConfirm_v072();
+};
+
+// A newly generated auto proposal always needs a fresh human confirmation.
+const runAutoPoseBeforeConfirm_v072=runAutoPose;
+runAutoPose=async function(){
+ confirmedReferenceSignature='';
+ await runAutoPoseBeforeConfirm_v072();
+ updateReferenceConfirmationUI();
+ drawIc();
+};
+$('autoPose').onclick=runAutoPose;
+
+// Persist the fact that a specific geometry was confirmed; reopening never silently
+// grants confirmation to changed points.
+const buildCaseBeforeConfirm_v072=buildCase;
+buildCase=function(){
+ const data=buildCaseBeforeConfirm_v072();
+ data.referenceReview={
+   confirmed:referencesConfirmed(),
+   signature:referencesConfirmed()?confirmedReferenceSignature:'',
+   confirmedAt:referencesConfirmed()?new Date().toISOString():null
+ };
+ return data;
+};
+
+// ---- v0.7.3 · globale sichtbare Button-Quittierung ----
+document.addEventListener('click',e=>{
+ const b=e.target.closest&&e.target.closest('button');
+ if(!b||b.disabled)return;
+ b.classList.remove('tapAck');
+ void b.offsetWidth;
+ b.classList.add('tapAck');
+ setTimeout(()=>b.classList.remove('tapAck'),650);
+},true);
+
+// ---- v0.7.3 · IC-Zyklus-Serie ----
+let icCycleSeries=[];
+let selectedCycleId=null;
+let cycleSelectionMode='manual';
+
+function median(vals){
+ const a=vals.filter(Number.isFinite).slice().sort((x,y)=>x-y);
+ if(!a.length)return NaN;
+ const m=Math.floor(a.length/2);
+ return a.length%2?a[m]:(a[m-1]+a[m])/2;
+}
+function cycleDistance(c,center){
+ const dh=c.measures.hip-center.hip, dk=c.measures.knee-center.knee, da=c.measures.ankle-center.ankle;
+ return Math.sqrt(dh*dh+dk*dk+da*da);
+}
+function cycleCenter(){
+ return {
+   hip:median(icCycleSeries.map(c=>c.measures.hip)),
+   knee:median(icCycleSeries.map(c=>c.measures.knee)),
+   ankle:median(icCycleSeries.map(c=>c.measures.ankle))
+ };
+}
+function typicalCycle(){
+ if(!icCycleSeries.length)return null;
+ const ctr=cycleCenter();
+ return icCycleSeries.slice().sort((a,b)=>cycleDistance(a,ctr)-cycleDistance(b,ctr))[0];
+}
+function outlierCycle(){
+ if(!icCycleSeries.length)return null;
+ const ctr=cycleCenter();
+ return icCycleSeries.slice().sort((a,b)=>cycleDistance(b,ctr)-cycleDistance(a,ctr))[0];
+}
+function rangeText(vals){
+ const a=vals.filter(Number.isFinite);
+ if(!a.length)return '—';
+ return (Math.max(...a)-Math.min(...a)).toFixed(1)+'°';
+}
+function renderIcSeries(){
+ const body=$('seriesBody'); if(!body)return;
+ body.innerHTML='';
+ icCycleSeries.forEach((c,i)=>{
+   const tr=document.createElement('tr');
+   if(c.id===selectedCycleId)tr.className='selected';
+   tr.innerHTML='<td>IC '+(i+1)+'<br><small>F '+c.frame+'</small></td>'+
+     '<td>'+c.measures.hip.toFixed(1)+'°</td>'+
+     '<td>'+c.measures.knee.toFixed(1)+'°</td>'+
+     '<td>'+(c.measures.ankle>=0?'+':'')+c.measures.ankle.toFixed(1)+'°</td>'+
+     '<td><button data-cycle="'+c.id+'">Wählen</button></td>';
+   body.appendChild(tr);
+ });
+ body.querySelectorAll('button[data-cycle]').forEach(b=>b.onclick=()=>{
+   selectedCycleId=b.dataset.cycle;
+   cycleSelectionMode='manual';
+   updateCycleChoice();
+   renderIcSeries();
+ });
+ $('seriesCount').textContent=icCycleSeries.length;
+ $('seriesKneeRange').textContent=rangeText(icCycleSeries.map(c=>c.measures.knee));
+ $('seriesAnkleRange').textContent=rangeText(icCycleSeries.map(c=>c.measures.ankle));
+ $('seriesStatus').textContent=icCycleSeries.length
+   ?icCycleSeries.length+' bestätigte IC-Schritte gespeichert · Mittelwerte werden nicht als klinische Auswahl erzwungen.'
+   :'Noch keine IC-Schritte in der Serie.';
+ updateCycleChoice();
+}
+function updateCycleChoice(){
+ ['chooseTypical','chooseOutlier','chooseManual'].forEach(id=>$(id)?.classList.remove('active'));
+ const t=typicalCycle(),o=outlierCycle(),sel=icCycleSeries.find(c=>c.id===selectedCycleId);
+ if(cycleSelectionMode==='typical')$('chooseTypical')?.classList.add('active');
+ if(cycleSelectionMode==='outlier')$('chooseOutlier')?.classList.add('active');
+ if(cycleSelectionMode==='manual')$('chooseManual')?.classList.add('active');
+
+ if(!icCycleSeries.length){
+   $('cycleChoiceInfo').textContent='Mit mindestens drei Schritten kann RunAssist einen typischen und einen auffälligsten Schritt vorschlagen.';
+   return;
+ }
+ let msg='';
+ if(icCycleSeries.length<3)msg='Noch zu wenige Schritte für einen belastbaren Serienvorschlag. ';
+ if(cycleSelectionMode==='typical'&&t)msg+='Typischer Vorschlag: IC '+(icCycleSeries.indexOf(t)+1)+' · kleinste Abweichung vom Serienmedian.';
+ else if(cycleSelectionMode==='outlier'&&o)msg+='Auffälliger Vorschlag: IC '+(icCycleSeries.indexOf(o)+1)+' · größte kombinierte Winkelabweichung vom Serienmedian.';
+ else if(sel)msg+='Therapeutisch ausgewählt: IC '+(icCycleSeries.indexOf(sel)+1)+'. Diese Auswahl hat Vorrang vor der Statistik.';
+ else msg+='Bitte einen Schritt auswählen.';
+ $('cycleChoiceInfo').textContent=msg;
+}
+$('addIcCycle').onclick=()=>{
+ if(!referencesConfirmed()){
+   $('seriesStatus').textContent='Nicht übernommen · Referenzpunkte dieses IC zuerst klinisch bestätigen.';
+   $('seriesStatus').className='status warn';
+   return;
+ }
+ const m=calcIc();
+ if(!m)return;
+ const ic=saved[0];
+ const item={
+   id:'ic_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),
+   time:ic?.time??v.currentTime,
+   frame:ic?.frame??Math.round(v.currentTime*fps),
+   measures:{hip:m.hip,knee:m.knee,ankle:m.ankle},
+   points:JSON.parse(JSON.stringify(icPts)),
+   image:ic?.image||''
+ };
+ icCycleSeries.push(item);
+ selectedCycleId=item.id;
+ cycleSelectionMode='manual';
+ $('seriesStatus').className='status ok';
+ renderIcSeries();
+};
+$('clearIcSeries').onclick=()=>{
+ icCycleSeries=[];selectedCycleId=null;cycleSelectionMode='manual';renderIcSeries();
+};
+$('chooseTypical').onclick=()=>{
+ if(icCycleSeries.length<3){$('cycleChoiceInfo').textContent='Bitte zuerst mindestens drei bestätigte IC-Schritte erfassen.';return}
+ const c=typicalCycle();selectedCycleId=c?.id||null;cycleSelectionMode='typical';renderIcSeries();
+};
+$('chooseOutlier').onclick=()=>{
+ if(icCycleSeries.length<3){$('cycleChoiceInfo').textContent='Bitte zuerst mindestens drei bestätigte IC-Schritte erfassen.';return}
+ const c=outlierCycle();selectedCycleId=c?.id||null;cycleSelectionMode='outlier';renderIcSeries();
+};
+$('chooseManual').onclick=()=>{
+ cycleSelectionMode='manual';updateCycleChoice();
+};
+
+// Extend case export with the series. Older case files remain readable because the field is optional.
+const buildCaseBeforeSeries_v073=buildCase;
+buildCase=function(){
+ const data=buildCaseBeforeSeries_v073();
+ data.icCycleSeries=JSON.parse(JSON.stringify(icCycleSeries));
+ data.icCycleSelection={mode:cycleSelectionMode,selectedCycleId:selectedCycleId};
+ return data;
+};
+
+// Restore v0.7.3 series on opening a compatible case.
+const openCaseChangeBeforeSeries_v073=$('openCase').onchange;
+$('openCase').onchange=async function(e){
+ await openCaseChangeBeforeSeries_v073.call(this,e);
+ try{
+   const f=e.target.files&&e.target.files[0];
+   if(!f)return;
+   const data=JSON.parse(await f.text());
+   icCycleSeries=Array.isArray(data.icCycleSeries)?data.icCycleSeries:[];
+   cycleSelectionMode=data.icCycleSelection?.mode||'manual';
+   selectedCycleId=data.icCycleSelection?.selectedCycleId||null;
+   renderIcSeries();
+ }catch(_){}
+};
+renderIcSeries();
 
 renderPhases();upd();loadIcFrame();
 </script>
