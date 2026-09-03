@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="RunAssist GA">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon-512.png">
-<title>RunAssist GA iPad v0.7.3</title>
+<title>RunAssist GA iPad v0.7.4</title>
 <style>
 :root{--p:#168a82;--pd:#0d5f59;--soft:#eaf7f5;--line:#cfe0e1;--ink:#24383a;--muted:#6d7f82}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -86,7 +86,7 @@ input[type=file]{position:absolute;left:-9999px}.scrub{width:100%;margin:12px 0}
 @media(max-width:700px){.autoActions{grid-template-columns:1fr}.confList{grid-template-columns:repeat(2,1fr)}}
 
 
-/* v0.7.3 · sichtbare Tipp-Quittierung */
+/* v0.7.4 · sichtbare Tipp-Quittierung */
 button{position:relative;transition:background-color .12s ease,transform .08s ease,box-shadow .12s ease}
 button.tapAck{background:#2478d4!important;color:#fff!important;box-shadow:0 0 0 3px rgba(36,120,212,.18)!important;transform:scale(.985)}
 button.tapAck::after{content:"✓";position:absolute;right:9px;top:50%;transform:translateY(-50%);font-weight:900;font-size:16px}
@@ -98,7 +98,7 @@ button.tapAck::after{content:"✓";position:absolute;right:9px;top:50%;transform
 .lockedMeasure{opacity:.5}
 @media(max-width:700px){.correctionRow{grid-template-columns:1fr}}
 
-/* v0.7.3 · IC-Zyklus-Serie */
+/* v0.7.4 · IC-Zyklus-Serie */
 .seriesGrid{display:grid;grid-template-columns:1.15fr .85fr;gap:12px}
 .seriesActions{display:grid;grid-template-columns:1.3fr .7fr;gap:8px;margin:8px 0}
 .seriesTable{width:100%;border-collapse:collapse;font-size:10.5px}
@@ -112,10 +112,18 @@ button.tapAck::after{content:"✓";position:absolute;right:9px;top:50%;transform
 .cycleChoices{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:8px}
 .cycleChoices button.active{background:var(--pd);color:#fff}
 @media(max-width:760px){.seriesGrid{grid-template-columns:1fr}.seriesActions,.cycleChoices{grid-template-columns:1fr}.seriesStats{grid-template-columns:1fr}}
+
+/* v0.7.4 · Quick Mark */
+.quickMarkBox{margin:8px 0;padding:10px;border:1px solid var(--line);border-radius:12px;background:#f7fbfb}
+.quickMarkProgress{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px}
+.quickMarkStep{padding:7px 4px;border:1px solid var(--line);border-radius:9px;text-align:center;font-size:10px;background:#fff}
+.quickMarkStep.done{background:#e9f7f1;border-color:#77b99a}.quickMarkStep.active{background:#e7f1ff;border-color:#2478d4;font-weight:800}
+.quickMarkStep span{display:block;font-size:13px;font-weight:800}.betaFold{margin-top:10px}.betaFold summary{cursor:pointer;font-weight:700;color:#647477}
+@media(max-width:650px){.quickMarkProgress{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-<header><div class="brand"><div><div class="logo"><span>Run</span>Assist</div><div class="note">GA · iPad PWA v0.7.3</div></div><div class="note">IC · Zyklus-Serie</div></div></header>
+<header><div class="brand"><div><div class="logo"><span>Run</span>Assist</div><div class="note">GA · iPad PWA v0.7.4</div></div><div class="note">IC · Quick Mark</div></div></header>
 <main>
 
 <section class="card">
@@ -201,6 +209,12 @@ button.tapAck::after{content:"✓";position:absolute;right:9px;top:50%;transform
  </div>
 </div>
 </section>
+
+<section class="card">
+<h2>5d · Quick Mark · fünf Punkte, dann rechnen</h2>
+<p class="note">Standardmodus: Bild mit 1 Finger verschieben, mit 2 Fingern zoomen. Dann <b>„Quick Mark starten“</b> und die fünf Punkte nacheinander antippen. RunAssist springt automatisch zum nächsten Punkt.</p>
+<div class="quickMarkBox"><div class="icActions"><button id="startQuickMark" class="primary">🎯 Quick Mark starten</button><button id="restartQuickMark">↺ Fünf Punkte neu</button></div>
+<div class="quickMarkProgress"><div class="quickMarkStep" data-qm="shoulder"><span>1</span>Schulter</div><div class="quickMarkStep" data-qm="hip"><span>2</span>Hüfte</div><div class="quickMarkStep" data-qm="knee"><span>3</span>Knie</div><div class="quickMarkStep" data-qm="ankle"><span>4</span>Sprunggelenk</div><div class="quickMarkStep" data-qm="forefoot"><span>5</span>Vorfuß</div></div><div id="quickMarkStatus" class="status diag" style="margin-top:8px">Bereit · Quick Mark starten.</div></div></section>
 
 <section class="card">
 <h2>6 · Initial Contact · automatische Referenzpunkt-Vorschläge</h2>
@@ -571,7 +585,7 @@ $('icReset').onclick=resetIcPoints;$('icUndo').onclick=()=>{
 };$('icLoadFrame').onclick=loadIcFrame;window.addEventListener('resize',()=>{resizeIc();applyView()});
 
 
-// ---- v0.7.3 · SIAS/SIPS Referenzpunkte + Beckenmessung ----
+// ---- v0.7.4 · SIAS/SIPS Referenzpunkte + Beckenmessung ----
 function pelvisName(){return pelvisSetIndex===0?'SIAS':'SIPS'}
 function axisAngle(a,b){return Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI}
 function norm180(a){while(a>180)a-=360;while(a<-180)a+=360;return a}
@@ -703,7 +717,7 @@ updateIcPrompt=function(){
   if(setIndex>=5)updatePelvisUI();
 };
 
-// ---- v0.7.3 · Initial Contact Befund & Interpretation ----
+// ---- v0.7.4 · Initial Contact Befund & Interpretation ----
 const icQualIds=['qHeel','qForefoot','qPelvisDrop','qPelvisRot','qTrunkLean','qStepLength'];
 
 function currentIcMeasures(){
@@ -787,7 +801,7 @@ buildCase = function(){
   return data;
 };
 
-// ---- v0.7.3 · automatische Referenzpunkt-Vorschläge ----
+// ---- v0.7.4 · automatische Referenzpunkt-Vorschläge ----
 function confPct(v){return Number.isFinite(v)?Math.round(v*100)+'%':'—'}
 function confClass(v){return v>=.75?'high':v>=.5?'mid':'low'}
 function setConf(id,v){
@@ -941,7 +955,7 @@ if($('correctAutoPoint')){
 }
 
 
-// ---- v0.7.3 · klinische Freigabe der Referenzpunkte ----
+// ---- v0.7.4 · klinische Freigabe der Referenzpunkte ----
 let confirmedReferenceSignature='';
 
 function referenceSignature(){
@@ -1035,7 +1049,7 @@ buildCase=function(){
  return data;
 };
 
-// ---- v0.7.3 · globale sichtbare Button-Quittierung ----
+// ---- v0.7.4 · globale sichtbare Button-Quittierung ----
 document.addEventListener('click',e=>{
  const b=e.target.closest&&e.target.closest('button');
  if(!b||b.disabled)return;
@@ -1045,7 +1059,7 @@ document.addEventListener('click',e=>{
  setTimeout(()=>b.classList.remove('tapAck'),650);
 },true);
 
-// ---- v0.7.3 · IC-Zyklus-Serie ----
+// ---- v0.7.4 · IC-Zyklus-Serie ----
 let icCycleSeries=[];
 let selectedCycleId=null;
 let cycleSelectionMode='manual';
@@ -1175,7 +1189,7 @@ buildCase=function(){
  return data;
 };
 
-// Restore v0.7.3 series on opening a compatible case.
+// Restore v0.7.4 series on opening a compatible case.
 const openCaseChangeBeforeSeries_v073=$('openCase').onchange;
 $('openCase').onchange=async function(e){
  await openCaseChangeBeforeSeries_v073.call(this,e);
@@ -1190,6 +1204,23 @@ $('openCase').onchange=async function(e){
  }catch(_){}
 };
 renderIcSeries();
+// ---- v0.7.4 · Quick Mark ----
+let quickMarkActive=false;
+function renderQuickMark(){
+ document.querySelectorAll('.quickMarkStep').forEach(el=>{const k=el.dataset.qm;el.classList.toggle('done',!!icPts[k]);el.classList.toggle('active',quickMarkActive&&setIndex<5&&icKeys[setIndex]===k);});
+ if(!$('quickMarkStatus'))return;
+ if(quickMarkActive&&setIndex<5)$('quickMarkStatus').textContent=(setIndex+1)+'/5 · '+icNames[icKeys[setIndex]]+' antippen.';
+ else if(['shoulder','hip','knee','ankle','forefoot'].every(k=>icPts[k]))$('quickMarkStatus').textContent=referencesConfirmed()?'✓ Fünf Punkte gesetzt und bestätigt · Winkel/Befund freigegeben.':'✓ Fünf Punkte gesetzt · jetzt Referenzpunkte bestätigen.';
+ else $('quickMarkStatus').textContent='Bereit · Quick Mark starten.';
+}
+function beginQuickMark(clearFirst){
+ if(clearFirst){['shoulder','hip','knee','ankle','forefoot'].forEach(k=>delete icPts[k]);confirmedReferenceSignature='';}
+ quickMarkActive=true;setIndex=0;pointArmed=true;$('icMode').textContent='🎯 Quick Mark · 1/5 Schulter antippen.';renderQuickMark();drawIc();
+}
+$('startQuickMark').onclick=()=>beginQuickMark(false);$('restartQuickMark').onclick=()=>beginQuickMark(true);
+icCanvas.addEventListener('pointerup',()=>{if(!quickMarkActive)return;setTimeout(()=>{if(setIndex>=5){quickMarkActive=false;pointArmed=false;$('icMode').textContent='✓ Quick Mark vollständig · Punkte prüfen und bestätigen.';}else{pointArmed=true;$('icMode').textContent='🎯 Quick Mark · '+(setIndex+1)+'/5 '+icNames[icKeys[setIndex]]+' antippen.';}renderQuickMark();},0);},false);
+const drawIcBeforeQuickMark_v074=drawIc;drawIc=function(){drawIcBeforeQuickMark_v074();renderQuickMark();};
+renderQuickMark();
 
 renderPhases();upd();loadIcFrame();
 </script>
