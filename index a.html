@@ -1,0 +1,1423 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#168a82">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="RunAssist GA">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icon-512.png">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="theme-color" content="#0b7779"><title>RunAssist GA iPad v0.7.5</title>
+<style>
+:root{--p:#168a82;--pd:#0d5f59;--soft:#eaf7f5;--line:#cfe0e1;--ink:#24383a;--muted:#6d7f82}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:#f3f7f7;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{background:#fff;border-bottom:1px solid var(--line);padding:14px 16px;position:sticky;top:0;z-index:5}
+.brand{display:flex;justify-content:space-between;align-items:center}.logo{font-size:24px;font-weight:800}.logo span{color:var(--p)}
+main{max-width:1100px;margin:auto;padding:14px}.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+h2{font-size:16px;color:var(--pd);margin:0 0 10px}.videoWrap{background:#111;border-radius:14px;overflow:hidden;aspect-ratio:16/9}
+video{width:100%;height:100%;object-fit:contain;background:#111}.controls{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:10px}
+button,.pick{min-height:56px;border:1px solid #b8cecf;border-radius:13px;background:#fff;color:var(--ink);font:inherit;font-weight:700;padding:10px;text-align:center}
+.primary{background:var(--p)!important;color:#fff;border-color:var(--p)!important}.pick{display:flex;align-items:center;justify-content:center;cursor:pointer}
+input[type=file]{position:absolute;left:-9999px}.scrub{width:100%;margin:12px 0}.info{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.info div{background:var(--soft);border-radius:12px;padding:10px;text-align:center}.info b{display:block;color:var(--pd);font-size:18px}
+.info span,.note{font-size:10.5px;color:var(--muted)}.status{font-size:12px;padding:10px;border-radius:10px;background:#fff7df;margin-top:10px;line-height:1.4}
+.ok{background:#edf8ef}.diag{background:#eef5f7;color:#36565a}
+.phases{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.phase{border:1px solid var(--line);border-radius:14px;padding:10px;background:#fbfdfd}
+.phase.done{background:var(--soft);border-color:#8fc8c3}.phaseTop{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.phase h3{font-size:13px;color:var(--pd);margin:0}.badge{font-size:10px;color:var(--muted);white-space:nowrap}
+.thumb{width:100%;aspect-ratio:16/9;background:#e9eeee;border-radius:10px;margin:8px 0;display:flex;align-items:center;justify-content:center;overflow:hidden;color:var(--muted);font-size:11px}
+.thumb img{width:100%;height:100%;object-fit:contain;background:#111}.phaseMeta{font-size:11px;color:var(--muted);min-height:16px;margin-bottom:7px}.phase button{width:100%;min-height:44px}
+@media(max-width:760px){.controls{grid-template-columns:repeat(3,1fr)}.info{grid-template-columns:1fr 1fr}.phases{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.phases{grid-template-columns:1fr}}
+
+.casebar{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.casebar button,.casebar label{min-height:52px}
+.caseinfo{margin-top:8px;font-size:11px;color:var(--muted);line-height:1.45}
+@media(max-width:620px){.casebar{grid-template-columns:1fr}}
+
+.icGrid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(280px,.65fr);gap:12px}
+.icStage{position:relative;background:#111;border-radius:14px;overflow:hidden;min-height:300px;display:flex;align-items:center;justify-content:center}
+.icStage img{display:block;max-width:100%;max-height:72vh;object-fit:contain}
+#icCanvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+.icTools{display:grid;gap:8px}.measure{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fbfdfd}
+.measureHead{display:flex;justify-content:space-between;gap:8px;align-items:center}.measure h3{margin:0;font-size:13px;color:var(--pd)}
+.measure .val{font-size:20px;font-weight:800;color:var(--pd)}.ref{font-size:11px;color:var(--muted);margin-top:4px}
+.eval{font-size:11px;font-weight:700;margin-top:5px}.good{color:#23734d}.warn{color:#a35d00}
+.pointHelp{font-size:11px;line-height:1.45;color:var(--muted);background:var(--soft);padding:10px;border-radius:12px}
+.icActions{display:grid;grid-template-columns:1fr 1fr;gap:8px}@media(max-width:820px){.icGrid{grid-template-columns:1fr}}
+
+
+.icStage{touch-action:none;cursor:crosshair}
+#icImage{transform-origin:0 0;will-change:transform}
+#icCanvas{z-index:2}
+.icZoomBar{display:grid;grid-template-columns:auto 1fr auto auto;gap:8px;align-items:center;margin-top:8px}
+.icZoomBar input[type=range]{position:static;left:auto;width:100%}
+.icZoomLabel{font-size:12px;font-weight:800;color:var(--pd);min-width:42px;text-align:center}
+.precisionNote{font-size:10.5px;color:var(--muted);margin-top:6px;line-height:1.4}
+.icActions{grid-template-columns:repeat(3,1fr)}
+@media(max-width:620px){.icZoomBar{grid-template-columns:auto 1fr auto}.icZoomBar button:last-child{grid-column:1/-1}.icActions{grid-template-columns:1fr}}
+
+
+.icQual{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.icQual label{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fbfdfd;font-size:12px;display:flex;gap:8px;align-items:flex-start}
+.icQual input{position:static;left:auto;margin-top:2px;transform:scale(1.15)}
+.icText{width:100%;min-height:82px;border:1px solid #b8cecf;border-radius:12px;padding:10px;font:inherit;color:var(--ink);resize:vertical;background:#fff}
+.reportBox{background:#f6fbfa;border:1px solid var(--line);border-radius:12px;padding:12px;line-height:1.5;font-size:12px}
+.reportBox b{color:var(--pd)}
+.icReportActions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+@media(max-width:700px){.icQual{grid-template-columns:1fr}.icReportActions{grid-template-columns:1fr}}
+
+
+#icLoupe{position:absolute;z-index:5;width:150px;height:150px;border:3px solid #fff;border-radius:50%;box-shadow:0 3px 16px rgba(0,0,0,.38);background:#111;pointer-events:none;display:none}
+#icLoupeCross{position:absolute;z-index:6;width:150px;height:150px;pointer-events:none;display:none}
+
+.autoBox{background:#f7fbfb;border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px}
+.autoActions{display:grid;grid-template-columns:1.3fr .7fr;gap:8px}
+.autoStatus{font-size:11px;line-height:1.45;margin-top:8px;padding:9px;border-radius:10px;background:#eef5f7;color:#36565a}
+.autoLegend{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:10.5px;color:var(--muted)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;vertical-align:-1px}
+.dot.high{background:#2f8b57}.dot.mid{background:#c38620}.dot.low{background:#b24444}
+.confList{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px}
+.confCell{border:1px solid var(--line);border-radius:9px;padding:7px;text-align:center;font-size:10px;background:#fff}
+.confCell b{display:block;font-size:12px;color:var(--pd)}
+@media(max-width:700px){.autoActions{grid-template-columns:1fr}.confList{grid-template-columns:repeat(2,1fr)}}
+
+
+/* v0.7.5 · sichtbare Tipp-Quittierung */
+button{position:relative;transition:background-color .12s ease,transform .08s ease,box-shadow .12s ease}
+button.tapAck{background:#2478d4!important;color:#fff!important;box-shadow:0 0 0 3px rgba(36,120,212,.18)!important;transform:scale(.985)}
+button.tapAck::after{content:"✓";position:absolute;right:9px;top:50%;transform:translateY(-50%);font-weight:900;font-size:16px}
+.confirmBox{margin-top:9px;padding:10px;border:1px solid var(--line);border-radius:12px;background:#f7fbfb}
+.confirmState{font-size:11px;line-height:1.4;margin-top:7px}
+.confirmState.pending{color:#8a5a00}.confirmState.ok{color:#257246;font-weight:700}
+.correctionRow{display:grid;grid-template-columns:1fr 1.2fr;gap:8px;margin-top:8px}
+.correctionRow select{min-height:42px;border:1px solid var(--line);border-radius:10px;background:#fff;padding:0 10px;font:inherit}
+.lockedMeasure{opacity:.5}
+@media(max-width:700px){.correctionRow{grid-template-columns:1fr}}
+
+/* v0.7.5 · IC-Zyklus-Serie */
+.seriesGrid{display:grid;grid-template-columns:1.15fr .85fr;gap:12px}
+.seriesActions{display:grid;grid-template-columns:1.3fr .7fr;gap:8px;margin:8px 0}
+.seriesTable{width:100%;border-collapse:collapse;font-size:10.5px}
+.seriesTable th,.seriesTable td{border-bottom:1px solid var(--line);padding:7px 5px;text-align:right}
+.seriesTable th:first-child,.seriesTable td:first-child{text-align:left}
+.seriesTable tr.selected{background:#eaf7f5}
+.seriesTable button{padding:5px 7px;min-height:30px;font-size:10px}
+.seriesStats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:8px}
+.seriesStat{border:1px solid var(--line);border-radius:10px;padding:8px;background:#fff;text-align:center}
+.seriesStat b{display:block;font-size:15px;color:var(--pd)}
+.cycleChoices{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:8px}
+.cycleChoices button.active{background:var(--pd);color:#fff}
+@media(max-width:760px){.seriesGrid{grid-template-columns:1fr}.seriesActions,.cycleChoices{grid-template-columns:1fr}.seriesStats{grid-template-columns:1fr}}
+
+/* v0.7.5 · Quick Mark */
+.quickMarkBox{margin:8px 0;padding:10px;border:1px solid var(--line);border-radius:12px;background:#f7fbfb}
+.quickMarkProgress{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px}
+.quickMarkStep{padding:7px 4px;border:1px solid var(--line);border-radius:9px;text-align:center;font-size:10px;background:#fff}
+.quickMarkStep.done{background:#e9f7f1;border-color:#77b99a}.quickMarkStep.active{background:#e7f1ff;border-color:#2478d4;font-weight:800}
+.quickMarkStep span{display:block;font-size:13px;font-weight:800}.betaFold{margin-top:10px}.betaFold summary{cursor:pointer;font-weight:700;color:#647477}
+@media(max-width:650px){.quickMarkProgress{grid-template-columns:1fr}}
+
+/* v0.7.5 · Gangphasen-Befund direkt am Frame */
+.phase{display:flex;flex-direction:column}
+.phaseWork{display:grid;grid-template-columns:1fr;gap:8px}
+.phaseFinding{width:100%;min-height:86px;resize:vertical;border:1px solid var(--line);border-radius:10px;padding:9px;font:inherit;font-size:11px;line-height:1.4;background:#fff;box-sizing:border-box}
+.phaseFinding:focus{outline:2px solid rgba(36,120,212,.22);border-color:#2478d4}
+.phaseFindingLabel{font-size:10.5px;font-weight:800;color:var(--pd);margin:2px 0 4px}
+.phaseFindingState{font-size:9.5px;color:var(--muted);margin-top:4px}
+@media(min-width:900px){.phases{grid-template-columns:1fr}.phaseWork{grid-template-columns:minmax(280px,.9fr) minmax(340px,1.1fr);align-items:start}.phaseFinding{min-height:170px}}
+
+/* v0.8 · Befundworkflow */
+.setupGrid,.quantGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.setupGrid label,.quantGrid label{font-size:11px;font-weight:800;color:var(--pd)}
+.setupGrid select,.setupGrid input,.quantGrid input,.dynamicBox textarea,.summaryBox textarea{
+ width:100%;box-sizing:border-box;margin-top:5px;border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit;background:#fff
+}
+.phaseCompare{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.phaseShot{border:1px solid var(--line);border-radius:10px;padding:7px;background:#fff}
+.phaseShot .thumb{margin-bottom:5px}
+.phaseActions{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.findingChips{display:flex;flex-wrap:wrap;gap:6px;margin:7px 0}
+.findingChips button{width:auto;min-height:34px;padding:6px 9px;font-size:10px}
+.findingChips button.active{background:var(--pd);color:#fff}
+.noFinding{border-style:dashed}
+.dynamicBox,.summaryBox{display:grid;gap:10px}
+.dynamicChecks{display:flex;flex-wrap:wrap;gap:12px;font-size:12px}
+.summaryBox textarea{min-height:150px;line-height:1.45}
+.limitWarn{padding:10px;border-radius:10px;background:#fff7df;border:1px solid #e5c36a;font-size:11px}
+@media(max-width:760px){.setupGrid,.quantGrid{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.setupGrid,.quantGrid,.phaseCompare{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><div class="brand"><div><div class="logo"><span>Run</span>Assist</div><div class="note">GA · iPad PWA v0.8.8 · Erfassung → Winkelanalyse</div></div><div class="note">Befundworkflow</div></div></header>
+<main>
+
+<section class="card">
+<h2>1 · Fall</h2>
+<div class="casebar">
+<button id="saveCase" class="primary">💾 Fall speichern</button>
+<label class="pick" for="openCase">📂 Gespeicherten Fall öffnen</label>
+<input id="openCase" type="file" accept=".runassist-ga,.json,application/json">
+</div>
+<div id="caseStatus" class="status diag">Noch kein Fall gespeichert oder geöffnet.</div>
+<div class="caseinfo">Gespeichert werden alle 9 Gangphasen mit Zeitstempel, Arbeits-Frame und Vorschaubild. Das Originalvideo selbst wird nicht in die Falldatei eingebettet. Beim späteren Öffnen wählst du das zugehörige Video erneut aus der Fotomediathek.</div>
+</section>
+
+
+<section class="card">
+<h2>2 · Aufnahme-Setup</h2>
+<div class="setupGrid">
+<label>Ebene
+<select id="recordingPlane"><option value="sagittal">Sagittal</option><option value="dorsal">Frontal / dorsal</option></select></label>
+<label>Gefilmte Seite
+<select id="filmedSide"><option value="links">Links</option><option value="rechts">Rechts</option><option value="beidseits">Beidseits / dorsal</option></select></label>
+<label>Laufbandgeschwindigkeit (km/h)
+<input id="gaitSpeed" type="number" min="0" step="0.1" placeholder="z. B. 4,5"></label>
+<label>Aufnahmequalität
+<select id="captureQuality"><option value="gut">Gut / orthogonal</option><option value="eingeschraenkt">Eingeschränkt / schräg</option></select></label>
+</div>
+<div id="planeRule" class="status diag">Sagittal: Die kameranahe gefilmte Seite ist automatisch die Referenzseite.</div>
+</section>
+
+<section class="card">
+<h2>3 · Gangvideo</h2>
+<div class="controls" style="grid-template-columns:1fr 1fr">
+<label class="pick primary" for="file">🎞️ Video auswählen</label>
+<label class="pick" for="camera">📷 Video aufnehmen</label>
+<input id="file" type="file" accept="video/*,.mp4,.mov,.m4v"><input id="camera" type="file" accept="video/*" capture="environment">
+</div>
+<div id="status" class="status">Bitte ein Video auswählen oder direkt aufnehmen.</div>
+<div id="diag" class="status diag">Diagnose: Noch keine Datei übergeben.</div>
+</section>
+
+<section class="card">
+<h2>4 · Wiedergabe & Frame-Navigation</h2>
+<div class="videoWrap"><video id="v" playsinline controls preload="metadata"></video></div>
+<input id="scrub" class="scrub" type="range" min="0" max="1000" value="0">
+<div class="controls">
+<button id="b10">⏪ −10</button><button id="b1">◀ 1 Frame</button><button id="play" class="primary">▶ Play</button><button id="f1">1 Frame ▶</button><button id="f10">+10 ⏩</button>
+</div>
+</section>
+
+<section class="card">
+<h2>5 · Videoinfo</h2>
+<div class="info">
+<div><b id="time">0:00.000</b><span>Position</span></div>
+<div><b id="dur">0:00</b><span>Dauer</span></div>
+<div><b>30</b><span>Arbeits-FPS*</span></div>
+<div><b id="frame">0</b><span>Frame*</span></div>
+</div>
+<p class="note">* 30 FPS bleiben in diesem Test zunächst das Navigationsraster. Jede Gangphase speichert Zeitposition, Arbeits-Frame und ein Vorschaubild.</p>
+</section>
+
+<section class="card">
+<h2>6 · Gangphasen · Zwei Zyklen + Befund</h2>
+<div class="caseinfo"><b>Arbeitsregel:</b> Der zuerst gespeicherte Frame bleibt <b>Zyklus 1</b>. Video zum gleichen Ereignis im nächsten Gangzyklus navigieren und dort <b>Zyklus 2 · Frame übernehmen</b> tippen. Erst danach den objektiven Befund erfassen.</div>
+<p class="note">Pro Phase zwei vergleichbare Zyklen sichern. Erst <b>Frame → objektive Beobachtung → Phase korrekt? → Abweichung ja/nein</b>. RunAssist beschreibt – der Therapeut interpretiert. Wiederholungen bleiben intern erhalten und werden später für den Bericht verdichtet.</p>
+<div id="phases" class="phases"></div>
+</section>
+
+
+
+
+<section class="card">
+<h2>7 · Dynamische Beobachtungen</h2>
+<div class="dynamicBox">
+<div class="dynamicChecks">
+<label><input type="checkbox" id="dynTrunk"> geringe Rumpfdynamik</label>
+<label><input type="checkbox" id="dynArm"> reduziertes Armpendel</label>
+<label><input type="checkbox" id="dynArmAsym"> asymmetrisches Armpendel</label>
+</div>
+<textarea id="dynamicFinding" placeholder="Weitere dynamische Beobachtung …"></textarea>
+<p class="note">Hierhin gehören Befunde, die aus der Bewegung beurteilt werden – nicht aus zwei Standbildern.</p>
+</div>
+</section>
+
+<section class="card">
+<h2>8 · Quantitative Gangparameter</h2>
+<div class="quantGrid">
+<label>Geschwindigkeit (km/h)<input id="qSpeed" type="number" step="0.1" readonly></label>
+<label>Zyklusdauer (s)<input id="qCycle" type="text" readonly></label>
+<label>Kadenz (Schritte/min)<input id="qCadence" type="text" readonly></label>
+<label>Doppelschrittlänge (m)<input id="qStride" type="text" readonly></label>
+</div>
+<p class="note">Berechnung nur bei zwei gespeicherten Initial Contacts derselben Seite. Keine automatische Interpretation.</p>
+</section>
+
+<section class="card">
+<h2>9 · Zusammenfassung objektiver Gangbefund</h2>
+<div id="cameraWarning" class="limitWarn" style="display:none">⚠ Aussage zur Frontalebene durch Kameraposition eingeschränkt.</div>
+<div class="summaryBox">
+<textarea id="objectiveSummary" placeholder="RunAssist verdichtet hier bestätigte objektive Befunde. Keine Ursachen, Diagnosen oder Muskelhypothesen."></textarea>
+<button id="buildSummary" class="primary">✨ Objektive Zusammenfassung erstellen</button>
+<textarea id="clinicalReasoning" placeholder="Therapeutische Interpretation / Clinical Reasoning – bewusst getrennt vom objektiven Befund."></textarea>
+</div>
+</section>
+
+<section class="card">
+<h2>10 · IC-Zyklus-Serie · mehrere Schritte vergleichen</h2>
+<p class="note">Nach bestätigten Referenzpunkten kannst du den aktuellen IC als eigenen Schritt in die Serie übernehmen. RunAssist zeigt die Streuung und schlägt einen <b>typischen</b> sowie einen <b>auffälligen</b> Schritt vor. Die klinische Auswahl bleibt bei dir.</p>
+<div class="seriesGrid">
+ <div>
+   <div class="seriesActions">
+     <button id="addIcCycle" class="primary">＋ Bestätigten IC zur Serie hinzufügen</button>
+     <button id="clearIcSeries">↺ Serie leeren</button>
+   </div>
+   <div id="seriesStatus" class="status diag">Noch keine IC-Schritte in der Serie.</div>
+   <div style="overflow:auto;margin-top:8px">
+    <table class="seriesTable">
+      <thead><tr><th>Schritt</th><th>Hüfte</th><th>Knie</th><th>OSG</th><th>Auswahl</th></tr></thead>
+      <tbody id="seriesBody"></tbody>
+    </table>
+   </div>
+ </div>
+ <div>
+   <b>Serienübersicht</b>
+   <div class="seriesStats">
+     <div class="seriesStat"><b id="seriesCount">0</b>Schritte</div>
+     <div class="seriesStat"><b id="seriesKneeRange">—</b>Knie-Spannweite</div>
+     <div class="seriesStat"><b id="seriesAnkleRange">—</b>OSG-Spannweite</div>
+   </div>
+   <div class="cycleChoices">
+     <button id="chooseTypical">◎ Typisch</button>
+     <button id="chooseOutlier">△ Auffällig</button>
+     <button id="chooseManual">☝ Therapeutisch</button>
+   </div>
+   <div id="cycleChoiceInfo" class="autoStatus">Mit mindestens drei Schritten kann RunAssist einen typischen und einen auffälligsten Schritt vorschlagen.</div>
+ </div>
+</div>
+</section>
+
+<section class="card">
+<h2>5d · Quick Mark · fünf Punkte, dann rechnen</h2>
+<p class="note">Standardmodus: Bild mit 1 Finger verschieben, mit 2 Fingern zoomen. Dann <b>„Quick Mark starten“</b> und die fünf Punkte nacheinander antippen. RunAssist springt automatisch zum nächsten Punkt.</p>
+<div class="quickMarkBox"><div class="icActions"><button id="startQuickMark" class="primary">🎯 Quick Mark starten</button><button id="restartQuickMark">↺ Fünf Punkte neu</button></div>
+<div class="quickMarkProgress"><div class="quickMarkStep" data-qm="shoulder"><span>1</span>Schulter</div><div class="quickMarkStep" data-qm="hip"><span>2</span>Hüfte</div><div class="quickMarkStep" data-qm="knee"><span>3</span>Knie</div><div class="quickMarkStep" data-qm="ankle"><span>4</span>Sprunggelenk</div><div class="quickMarkStep" data-qm="forefoot"><span>5</span>Vorfuß</div></div><div id="quickMarkStatus" class="status diag" style="margin-top:8px">Bereit · Quick Mark starten.</div></div></section>
+
+<section class="card">
+<h2>6 · Initial Contact · automatische Referenzpunkt-Vorschläge</h2>
+<div class="autoBox">
+  <div class="autoActions">
+    <button id="autoPose" class="primary">✨ Referenzpunkte automatisch vorschlagen</button>
+    <button id="autoClear">↺ Vorschläge verwerfen</button>
+  </div>
+  <div id="autoStatus" class="autoStatus">Noch keine automatische Erkennung durchgeführt. Das Pose-Modell wird erst beim ersten Start geladen.</div>
+  <div class="confList">
+    <div class="confCell"><b id="confShoulder">—</b>Schulter</div>
+    <div class="confCell"><b id="confHip">—</b>Hüfte</div>
+    <div class="confCell"><b id="confKnee">—</b>Knie</div>
+    <div class="confCell"><b id="confAnkle">—</b>Sprunggelenk</div>
+    <div class="confCell"><b id="confFoot">—</b>Vorfuß</div>
+  </div>
+  <div class="autoLegend">
+    <span><i class="dot high"></i>Erkennung hoch ≥75%</span>
+    <span><i class="dot mid"></i>Erkennung mittel 50–74%</span>
+    <span><i class="dot low"></i>Erkennung niedrig &lt;50% · bitte prüfen</span>
+  </div>
+  <p class="note" style="margin-bottom:0">Die Automatik ist nur ein Vorschlag. Die klinische Freigabe bleibt beim Untersucher. SIAS/SIPS werden nicht automatisch gesetzt.</p>
+</div>
+</section>
+
+<section class="card">
+<h2>6 · Initial Contact · Winkelanalyse (Pilot)</h2>
+<p class="note"><b>Referenzbein = immer das Bein auf der gefilmten Kameraseite.</b> Setze die anatomischen Referenzpunkte selbst. RunAssist berechnet erst nach vollständiger Markierung die bildbasierten 2D-Winkel.</p>
+<div class="icGrid">
+<div>
+<div id="icMode" class="status diag" style="margin:0 0 8px">Bildmodus · Doppeltippen, um den nächsten Referenzpunkt zu setzen.</div>
+<div id="icStage" class="icStage"><div id="icEmpty" class="note" style="color:#dfe8e8;padding:20px;text-align:center">Noch kein Initial-Contact-Frame gespeichert.</div><img id="icImage" alt="Initial Contact" hidden><canvas id="icCanvas"></canvas><canvas id="icLoupe" width="300" height="300"></canvas><canvas id="icLoupeCross" width="300" height="300"></canvas></div>
+<div class="precisionNote"><b>iPad-Steuerung:</b> 1 Finger ziehen = Bild verschieben · 2 Finger = zoomen · Doppeltipp = nächsten Referenzpunkt aktivieren · danach 1× tippen = Punkt setzen.</div>
+
+<div class="confirmBox">
+  <b>Referenzpunkte prüfen</b>
+  <div class="correctionRow">
+    <select id="correctionTarget" aria-label="Referenzpunkt zur Korrektur">
+      <option value="shoulder">Schulter</option>
+      <option value="hip">Hüfte</option>
+      <option value="knee">Knie</option>
+      <option value="ankle">Sprunggelenk</option>
+      <option value="forefoot">Vorfuß</option>
+    </select>
+    <button id="correctAutoPoint">🎯 Ausgewählten Punkt korrigieren</button>
+  </div>
+  <div class="icActions" style="margin-top:8px">
+    <button id="confirmReferencePoints" class="primary">✓ Referenzpunkte bestätigen</button>
+  </div>
+  <div id="referenceConfirmState" class="confirmState pending">Noch nicht bestätigt · Winkel und klinischer IC-Befund sind gesperrt.</div>
+</div>
+<div class="icActions" style="margin-top:8px"><button id="icReset">↺ Referenzpunkte neu setzen</button><button id="icUndo">← Letzten Punkt löschen</button><button id="icLoadFrame" class="primary">IC-Frame aktualisieren</button></div>
+</div>
+<div class="icTools">
+<div class="pointHelp"><b>Referenzbein:</b> kameraseitiges Bein<br><br><b>Referenzpunkte:</b><br>S = Schulter · H = Hüfte · K = Knie · A = Sprunggelenk · F = Vorfuß<br><br><b id="icPrompt">1/5 · Bitte Schulter antippen.</b><br><br>Nach dem Setzen können alle Punkte mit dem Finger verschoben werden. Für maximale Genauigkeit Bild vergrößern und das Fadenkreuz auf die Gelenkmitte setzen.</div>
+<div class="measure"><div class="measureHead"><h3>Hüfte · Flexion</h3><span id="hipVal" class="val">—</span></div><div class="ref">Referenz IC: 20–30° Flexion</div><div id="hipEval" class="eval">Noch nicht gemessen</div></div>
+<div class="measure"><div class="measureHead"><h3>Knie · Flexion</h3><span id="kneeVal" class="val">—</span></div><div class="ref">Referenz IC: 0–10° Flexion</div><div id="kneeEval" class="eval">Noch nicht gemessen</div></div>
+<div class="measure"><div class="measureHead"><h3>OSG · Dorsalextension</h3><span id="ankleVal" class="val">—</span></div><div class="ref">Orientierung IC: ca. 0–5° Dorsalextension</div><div id="ankleEval" class="eval">Noch nicht gemessen</div></div>
+<div id="icFinding" class="status diag">Automatischer IC-Befund erscheint nach Setzen der Messpunkte.</div>
+<div class="note">Pilot: 2D-Bildwinkel. Kameraperspektive, Markerposition und Projektion beeinflussen die Werte. Die Referenzbereiche sind klinische Orientierungswerte.</div>
+</div></div>
+</section>
+
+
+
+<section class="card">
+<h2>6b · Initial Contact · Beckenachse & Hüftmessung</h2>
+<p class="note">Zwei Messwege: <b>A</b> echte beckenbezogene Hüftmessung über SIAS–SIPS, wenn beide Punkte sicher sichtbar sind. <b>B</b> Ersatzmessung über Rumpf- und Femurachse, wenn das Becken z. B. durch die Laufbandtraverse verdeckt ist.</p>
+<div class="casebar" style="margin-top:10px">
+<button id="pelvisVisible" class="primary">A · SIAS/SIPS sichtbar</button>
+<button id="pelvisHidden">B · Becken verdeckt</button>
+</div>
+<div id="pelvisModeInfo" class="status diag">Messweg A aktiv · Doppeltipp aktiviert SIAS, danach SIPS.</div>
+<div class="measureGrid" style="margin-top:10px">
+<div class="measure"><div class="measureHead"><h3>Beckenneigung</h3><span class="badge">SIAS–SIPS</span></div><div class="measureValue" id="pelvisTiltVal">—</div><div class="eval" id="pelvisTiltEval">Noch nicht gemessen</div></div>
+<div class="measure"><div class="measureHead"><h3>Hüftflexion</h3><span class="badge">beckenbezogen</span></div><div class="measureValue" id="trueHipVal">—</div><div class="eval" id="trueHipEval">Noch nicht valide bestimmbar</div></div>
+<div class="measure"><div class="measureHead"><h3>Rumpf-Femur-Winkel</h3><span class="badge">Surrogat</span></div><div class="measureValue" id="surrogateHipVal">—</div><div class="eval" id="surrogateHipEval">Nur bei verdecktem Becken als Ersatzgröße</div></div>
+</div>
+<div id="pelvisValidity" class="reportBox" style="margin-top:10px"><b>Validität:</b> SIAS und SIPS noch nicht gesetzt.</div>
+</section>
+
+<section class="card">
+<h2>7 · Initial Contact · Befund & Interpretation</h2>
+<p class="note">RunAssist übernimmt die gemessenen Winkel automatisch. Ergänze nur die qualitativen Beobachtungen, die sich im Einzelbild nicht sinnvoll allein über Gradwerte beschreiben lassen.</p>
+
+<div class="measure" style="margin-bottom:10px">
+  <div class="measureHead"><h3>Automatische Winkelinterpretation</h3><span class="badge">aus Abschnitt 6</span></div>
+  <div id="icAutoInterpretation" class="reportBox" style="margin-top:8px">Noch keine vollständige IC-Messung vorhanden.</div>
+</div>
+
+<h3 style="font-size:13px;color:var(--pd);margin:12px 0 8px">Qualitative Beobachtungen</h3>
+<div class="icQual">
+<label><input type="checkbox" id="qHeel"><span><b>Fersenkontakt vorhanden</b><br><span class="note">klarer initialer Fersenaufsatz</span></span></label>
+<label><input type="checkbox" id="qForefoot"><span><b>Vorfuß-/Mittelfußkontakt</b><br><span class="note">kein eindeutiger Fersenkontakt</span></span></label>
+<label><input type="checkbox" id="qPelvisDrop"><span><b>Beckenabsenkung kontralateral</b><br><span class="note">Hinweis auf reduzierte laterale Kontrolle</span></span></label>
+<label><input type="checkbox" id="qPelvisRot"><span><b>Auffällige Beckenrotation</b><br><span class="note">verstärkt oder vermindert</span></span></label>
+<label><input type="checkbox" id="qTrunkLean"><span><b>Rumpfneigung auffällig</b><br><span class="note">deutliche Vor-/Seitneigung</span></span></label>
+<label><input type="checkbox" id="qStepLength"><span><b>Schrittlänge auffällig</b><br><span class="note">verkürzt oder verlängert</span></span></label>
+</div>
+
+<h3 style="font-size:13px;color:var(--pd);margin:14px 0 8px">PT-Hypothese / klinische Überlegung</h3>
+<textarea id="icHypothesis" class="icText" placeholder="z. B. mögliche Ursache, Kompensationsstrategie, Zusammenhang mit vorherigem Befund ..."></textarea>
+
+<div class="icReportActions">
+  <button id="buildIcReport" class="primary">📝 IC-Kurzbefund erstellen</button>
+  <button id="clearIcReport">↺ Befund zurücksetzen</button>
+</div>
+
+<div id="icReport" class="reportBox" style="margin-top:10px"><b>IC-Kurzbefund:</b><br>Noch nicht erstellt.</div>
+</section>
+
+</main>
+
+<script>
+
+
+let poseLandmarker=null,poseModelLoading=null,autoConfidence={};
+
+function loadClassicScript(src){
+  return new Promise((resolve,reject)=>{
+    const existing=[...document.scripts].find(s=>s.src===src);
+    if(existing){
+      if(window.Pose)return resolve();
+      existing.addEventListener('load',resolve,{once:true});
+      existing.addEventListener('error',()=>reject(new Error('MediaPipe-Script konnte nicht geladen werden')),{once:true});
+      return;
+    }
+    const s=document.createElement('script');
+    s.src=src;
+    s.crossOrigin='anonymous';
+    s.onload=resolve;
+    s.onerror=()=>reject(new Error('MediaPipe-Script konnte nicht geladen werden'));
+    document.head.appendChild(s);
+  });
+}
+
+async function ensurePoseModel(){
+  if(poseLandmarker)return poseLandmarker;
+  if(poseModelLoading)return poseModelLoading;
+  poseModelLoading=(async()=>{
+    await loadClassicScript('https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js');
+    if(!window.Pose)throw new Error('MediaPipe Pose wurde nicht bereitgestellt');
+
+    const pose=new Pose({
+      locateFile:(file)=>'https://cdn.jsdelivr.net/npm/@mediapipe/pose/'+file
+    });
+    pose.setOptions({
+      modelComplexity:0,
+      smoothLandmarks:false,
+      enableSegmentation:false,
+      smoothSegmentation:false,
+      minDetectionConfidence:0.45,
+      minTrackingConfidence:0.45
+    });
+
+    poseLandmarker=pose;
+    return poseLandmarker;
+  })();
+
+  try{return await poseModelLoading}
+  catch(e){poseModelLoading=null;throw e}
+}
+
+const $=x=>document.getElementById(x),v=$('v'),s=$('scrub');let u='',fps=30,currentVideoName='';
+const phaseNames=[
+'Initial Contact',
+'Loading Response',
+'Early Mid Stance',
+'Late Mid Stance',
+'Terminal Stance',
+'Pre-Swing',
+'Initial Swing',
+'Mid Swing',
+'Terminal Swing'
+];
+const saved=Array(phaseNames.length).fill(null);
+const savedB=Array(phaseNames.length).fill(null);
+let phaseFindings=Array(phaseNames.length).fill('');
+let phaseFlags=Array.from({length:phaseNames.length},()=>[]);
+const findingOptions=['Beckentiefstellung','laterale Rumpfneigung','OSG-Dorsalextension vermindert','tibiale Progression vermindert','vorzeitige Fersenablösung','Knie vergleichsweise extendiert','Knie vergleichsweise flektiert','Hüftflexion vermindert','Hüftextension vermindert','Bodenfreiheit vermindert'];
+
+function fmt(t,ms){if(!isFinite(t))return'0:00';const m=Math.floor(t/60),x=t-m*60;return m+':'+x.toFixed(ms?3:0).padStart(ms?6:2,'0')}
+function upd(){$('time').textContent=fmt(v.currentTime,true);$('dur').textContent=fmt(v.duration||0,false);$('frame').textContent=Math.round(v.currentTime*fps);if(v.duration)s.value=Math.round(v.currentTime/v.duration*1000)}
+function diag(t){$('diag').textContent='Diagnose: '+t}
+function load(f){
+ if(!f){diag('Auswahl beendet, aber iPadOS hat keine Videodatei übergeben.');return}
+ if(u)URL.revokeObjectURL(u);
+ currentVideoName=f.name||'iPad-Video';
+ u=URL.createObjectURL(f);v.pause();v.src=u;v.load();
+ saved.fill(null);savedB.fill(null);renderPhases();
+ $('status').textContent='Video wird vorbereitet: '+(f.name||'iPad-Video');$('status').className='status';
+ diag('Datei erhalten ✓ · '+(f.name||'ohne Namen')+' · '+(f.type||'Typ unbekannt')+' · '+(f.size/1048576).toFixed(1)+' MB');
+}
+$('file').addEventListener('change',e=>load(e.target.files&&e.target.files[0]));
+$('camera').addEventListener('change',e=>load(e.target.files&&e.target.files[0]));
+v.onloadedmetadata=()=>{upd();$('status').textContent='Video bereit ✓ · '+fmt(v.duration||0,false);$('status').className='status ok';diag('Metadaten gelesen.')};
+v.onloadeddata=()=>diag('Erstes Videobild dekodiert – bereit zur Gangphasen-Zuordnung.');
+v.onerror=()=>{const e=v.error;diag(e?'MediaError '+e.code:'unbekannter Medienfehler');$('status').textContent='Video konnte nicht wiedergegeben werden.'};
+v.ontimeupdate=upd;v.onseeked=upd;
+$('play').onclick=()=>{if(v.paused){v.play().then(()=>$('play').textContent='⏸ Pause').catch(err=>diag('Play-Fehler: '+err.message))}else v.pause()};
+v.onpause=()=>$('play').textContent='▶ Play';
+function step(n){v.pause();v.currentTime=Math.max(0,Math.min(v.duration||Infinity,v.currentTime+n/fps));upd()}
+$('b1').onclick=()=>step(-1);$('f1').onclick=()=>step(1);$('b10').onclick=()=>step(-10);$('f10').onclick=()=>step(10);
+s.oninput=()=>{if(v.duration){v.pause();v.currentTime=s.value/1000*v.duration;upd()}};
+
+function snapshot(){
+ const c=document.createElement('canvas');
+ c.width=v.videoWidth||640;c.height=v.videoHeight||360;
+ try{c.getContext('2d').drawImage(v,0,0,c.width,c.height);return c.toDataURL('image/jpeg',0.72)}catch(e){return ''}
+}
+function capturePhase(i,slot='A'){
+ if(!v.src||!isFinite(v.duration)){diag('Bitte zuerst ein Video laden.');return}
+ v.pause();
+ const obj={time:v.currentTime,frame:Math.round(v.currentTime*fps),image:snapshot()};
+ if(slot==='B')savedB[i]=obj; else saved[i]=obj;
+ renderPhases(); updateQuant();
+}
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function renderPhases(){
+ const box=$('phases');box.innerHTML='';
+ phaseNames.forEach((name,i)=>{
+   const a=saved[i],b=savedB[i],d=document.createElement('div');d.className='phase'+(a||b?' done':'');
+   const finding=esc(phaseFindings[i]||'');
+   const chips=findingOptions.map(x=>'<button type="button" data-chip="'+i+'" data-value="'+esc(x)+'" class="'+(phaseFlags[i].includes(x)?'active':'')+'">'+esc(x)+'</button>').join('');
+   const shot=(x,label,slot)=>'<div class="phaseShot"><b>'+label+'</b><div class="thumb">'+(x&&x.image?'<img alt="Frame-Vorschau" src="'+x.image+'">':'Noch kein Frame')+'</div><div class="phaseMeta">'+(x?('Zeit '+fmt(x.time,true)+' · Frame '+x.frame):'')+'</div><button data-capture="'+i+'" data-slot="'+slot+'">'+(x?'Frame ersetzen':'Frame übernehmen')+'</button></div>';
+   d.innerHTML='<div class="phaseTop"><h3>'+(i+1)+' · '+name+'</h3><span class="badge">'+(a&&b?'✓ 2 Zyklen':(a||b?'1/2':'offen'))+'</span></div>'+
+   '<div class="phaseWork"><div class="phaseCompare">'+shot(a,'Zyklus 1','A')+shot(b,'Zyklus 2','B')+'</div>'+
+   '<div><div class="phaseFindingLabel">Objektiver Befund · '+name+'</div><div class="findingChips">'+chips+
+   '<button type="button" class="noFinding '+(phaseFlags[i].includes('Keine relevante Auffälligkeit')?'active':'')+'" data-chip="'+i+'" data-value="Keine relevante Auffälligkeit">Keine relevante Auffälligkeit</button></div>'+
+   '<textarea class="phaseFinding" data-finding="'+i+'" placeholder="Nur sichtbare/reproduzierbare Beobachtung …">'+finding+'</textarea>'+
+   '<div class="phaseFindingState" data-state="'+i+'">'+((phaseFindings[i]||phaseFlags[i].length)?'✓ Befund erfasst':'Noch kein Befund')+'</div></div></div>';
+   box.appendChild(d);
+ });
+ box.querySelectorAll('button[data-capture]').forEach(btn=>btn.onclick=()=>capturePhase(Number(btn.dataset.capture),btn.dataset.slot));
+ box.querySelectorAll('button[data-chip]').forEach(btn=>btn.onclick=()=>{
+   const i=Number(btn.dataset.chip),val=btn.dataset.value;
+   if(val==='Keine relevante Auffälligkeit'){phaseFlags[i]=phaseFlags[i].includes(val)?[]:[val]}
+   else{
+     phaseFlags[i]=phaseFlags[i].filter(x=>x!=='Keine relevante Auffälligkeit');
+     phaseFlags[i]=phaseFlags[i].includes(val)?phaseFlags[i].filter(x=>x!==val):[...phaseFlags[i],val];
+   }
+   renderPhases();
+ });
+ box.querySelectorAll('textarea[data-finding]').forEach(t=>t.addEventListener('input',()=>{
+   const i=Number(t.dataset.finding);phaseFindings[i]=t.value;
+   const st=box.querySelector('[data-state="'+i+'"]');if(st)st.textContent=t.value.trim()||phaseFlags[i].length?'✓ Befund erfasst':'Noch kein Befund';
+ }));
+}
+function updateSetup(){
+ const plane=$('recordingPlane').value,side=$('filmedSide').value;
+ $('planeRule').textContent=plane==='sagittal'?'Sagittal: '+side+' ist automatisch die Referenzseite.':'Frontal/dorsal: rechte und linke Seite werden getrennt beurteilt; keine 3D-Rotation aus 2D ableiten.';
+ $('cameraWarning').style.display=$('captureQuality').value==='eingeschraenkt'?'block':'none';
+ $('qSpeed').value=$('gaitSpeed').value||'';
+ updateQuant();
+}
+function updateQuant(){
+ const sp=Number($('gaitSpeed')?.value||0),a=saved[0],b=savedB[0];
+ $('qSpeed').value=sp||'';
+ if(a&&b&&Math.abs(b.time-a.time)>0.15){
+   const cyc=Math.abs(b.time-a.time),cad=120/cyc,stride=sp>0?(sp/3.6)*cyc:null;
+   $('qCycle').value=cyc.toFixed(2);$('qCadence').value=cad.toFixed(1);$('qStride').value=stride?stride.toFixed(2):'—';
+ }else{$('qCycle').value='—';$('qCadence').value='—';$('qStride').value='—'}
+}
+function buildObjectiveSummary(){
+ const rows=[];
+ phaseNames.forEach((n,i)=>{
+   const vals=phaseFlags[i].filter(x=>x!=='Keine relevante Auffälligkeit');
+   const free=(phaseFindings[i]||'').trim();
+   if(vals.length||free)rows.push(n+': '+[...vals,free].filter(Boolean).join('; ')+'.');
+ });
+ const dyn=[];
+ if($('dynTrunk').checked)dyn.push('geringe Rumpfdynamik');
+ if($('dynArm').checked)dyn.push('reduziertes Armpendel');
+ if($('dynArmAsym').checked)dyn.push('asymmetrisches Armpendel');
+ if($('dynamicFinding').value.trim())dyn.push($('dynamicFinding').value.trim());
+ let txt=rows.join('\n');
+ if(dyn.length)txt+=(txt?'\n\n':'')+'Dynamisch: '+dyn.join('; ')+'.';
+ if($('captureQuality').value==='eingeschraenkt')txt+=(txt?'\n\n':'')+'⚠ Aussage zur Frontalebene durch Kameraposition eingeschränkt.';
+ $('objectiveSummary').value=txt;
+}
+
+function safeStem(s){
+ return (s||'Fall')
+   .replace(/\.[^.]+$/,'')
+   .replace(/[^a-zA-Z0-9äöüÄÖÜß_-]+/g,'_')
+   .slice(0,60) || 'Fall';
+}
+
+function buildCase(){
+ return {
+   format:'RunAssist-GA-Case',
+   version:'0.8',
+   recording:{plane:$('recordingPlane').value,side:$('filmedSide').value,speed:$('gaitSpeed').value,quality:$('captureQuality').value},
+   dynamic:{trunk:$('dynTrunk').checked,arm:$('dynArm').checked,armAsym:$('dynArmAsym').checked,text:$('dynamicFinding').value},
+   objectiveSummary:$('objectiveSummary').value,
+   clinicalReasoning:$('clinicalReasoning').value,
+   savedAt:new Date().toISOString(),
+   fps:fps,
+   videoName:currentVideoName,
+   icAnalysis:icPts ? JSON.parse(JSON.stringify(icPts)) : null,
+   phases:phaseNames.map((name,i)=>({
+     name:name,
+     time:saved[i]?.time ?? null,
+     frame:saved[i]?.frame ?? null,
+     image:saved[i]?.image ?? '',
+     second:savedB[i] ? {time:savedB[i].time,frame:savedB[i].frame,image:savedB[i].image} : null,
+     finding:phaseFindings[i] ?? '',
+     flags:phaseFlags[i] ?? []
+   }))
+ };
+}
+
+$('saveCase').onclick=()=>{
+ const data=buildCase();
+ const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement('a');
+ a.href=url;
+ a.download='RunAssist_'+safeStem(currentVideoName||'Fall')+'.runassist-ga';
+ document.body.appendChild(a);
+ a.click();
+ a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1200);
+ const count=saved.filter(Boolean).length;
+ $('caseStatus').textContent='Fall gespeichert · '+count+' von 9 Gangphasen';
+ $('caseStatus').className='status ok';
+};
+
+$('openCase').onchange=async e=>{
+ const f=e.target.files&&e.target.files[0];
+ if(!f)return;
+ try{
+   const data=JSON.parse(await f.text());
+   if(data.format!=='RunAssist-GA-Case' || !Array.isArray(data.phases)){
+     throw new Error('Keine gültige RunAssist-Ganganalyse-Falldatei.');
+   }
+   saved.fill(null);
+   phaseFindings=Array(phaseNames.length).fill('');
+   phaseFlags=Array.from({length:phaseNames.length},()=>[]);
+   savedB.fill(null);
+   data.phases.forEach((p,i)=>{
+     if(i>=saved.length)return;
+     if(p && (p.time!==null || p.frame!==null || p.image)){
+       saved[i]={
+         time:Number.isFinite(Number(p.time)) ? Number(p.time) : 0,
+         frame:Number.isFinite(Number(p.frame)) ? Number(p.frame) : 0,
+         image:p.image||''
+       };
+     }
+     phaseFindings[i]=typeof p?.finding==='string'?p.finding:'';
+     phaseFlags[i]=Array.isArray(p?.flags)?p.flags:[];
+     if(p?.second)savedB[i]={time:Number(p.second.time)||0,frame:Number(p.second.frame)||0,image:p.second.image||''};
+   });
+   currentVideoName=data.videoName||'';
+   if(data.recording){$('recordingPlane').value=data.recording.plane||'sagittal';$('filmedSide').value=data.recording.side||'links';$('gaitSpeed').value=data.recording.speed||'';$('captureQuality').value=data.recording.quality||'gut';}
+   if(data.dynamic){$('dynTrunk').checked=!!data.dynamic.trunk;$('dynArm').checked=!!data.dynamic.arm;$('dynArmAsym').checked=!!data.dynamic.armAsym;$('dynamicFinding').value=data.dynamic.text||'';}
+   $('objectiveSummary').value=data.objectiveSummary||'';$('clinicalReasoning').value=data.clinicalReasoning||'';updateSetup();
+   if(data.icClinical){
+     const q=data.icClinical.qualitative||{};
+     icQualIds.forEach(id=>{if($(id))$(id).checked=!!q[id]});
+     if($('icHypothesis'))$('icHypothesis').value=data.icClinical.hypothesis||'';
+     if($('icReport') && data.icClinical.report)$('icReport').innerHTML='<b>IC-Kurzbefund:</b><br>'+data.icClinical.report.replace(/^IC-Kurzbefund:\s*/,'');
+   }
+   icPts=data.icAnalysis ? JSON.parse(JSON.stringify(data.icAnalysis)) : defaultIcPoints();
+   renderPhases();loadIcFrame();
+   const count=saved.filter(Boolean).length;
+   $('caseStatus').textContent='Fall geöffnet · '+count+' von 9 Gangphasen'+(currentVideoName?' · Video: '+currentVideoName:'');
+   $('caseStatus').className='status ok';
+   if(currentVideoName){
+     $('status').textContent='Bitte zugehöriges Video erneut auswählen: '+currentVideoName;
+     $('status').className='status';
+   }
+ }catch(err){
+   $('caseStatus').textContent='Falldatei konnte nicht geöffnet werden: '+err.message;
+   $('caseStatus').className='status';
+ }
+ e.target.value='';
+};
+
+
+const icStage=$('icStage'),icImg=$('icImage'),icCanvas=$('icCanvas'),icCtx=icCanvas.getContext('2d');
+let icPts={},setIndex=0,icZoom=1,icPanX=0,icPanY=0,touches=new Map(),gesture=null;
+let pointArmed=false,lastTap=0,pendingTap=null,panStart=null,moved=false;
+const icKeys=['shoulder','hip','knee','ankle','forefoot'],icLabels={shoulder:'S',hip:'H',knee:'K',ankle:'A',forefoot:'F',sias:'SIAS',sips:'SIPS'},icNames={shoulder:'Schulter',hip:'Hüfte',knee:'Knie',ankle:'Sprunggelenk',forefoot:'Vorfuß',sias:'SIAS',sips:'SIPS'};
+let pelvisMode='visible',pelvisSetIndex=0;
+
+function clearIcMeasurements(){$('hipVal').textContent='—';$('kneeVal').textContent='—';$('ankleVal').textContent='—';['hipEval','kneeEval','ankleEval'].forEach(id=>{$(id).textContent='Noch nicht gemessen';$(id).className='eval'});$('icFinding').textContent='Automatischer IC-Befund erscheint nach Setzen aller fünf Referenzpunkte.'}
+function updateMode(){
+ if(setIndex>=5){$('icMode').textContent='✓ Alle Referenzpunkte gesetzt · Bild kann weiter verschoben/ gezoomt werden.';pointArmed=false;return}
+ if(pointArmed)$('icMode').textContent='🎯 Referenzpunkt setzen: '+icNames[icKeys[setIndex]]+' · jetzt einmal auf die gewünschte Stelle tippen.';
+ else $('icMode').textContent='Bildmodus · 1 Finger verschiebt · 2 Finger zoomen · Doppeltipp aktiviert '+icNames[icKeys[setIndex]]+'.';
+}
+function updateIcPrompt(){if(setIndex<5)$('icPrompt').textContent=(setIndex+1)+'/5 · '+icNames[icKeys[setIndex]]+' als nächsten Referenzpunkt setzen.';else $('icPrompt').textContent='✓ Alle Referenzpunkte gesetzt.';updateMode()}
+function resetIcPoints(){icPts={};setIndex=0;pointArmed=false;clearIcMeasurements();updateIcPrompt();drawIc()}
+function resetView(){icZoom=1;icPanX=0;icPanY=0;applyView()}
+function loadIcFrame(){const ic=saved[0];if(!ic||!ic.image){icImg.hidden=true;$('icEmpty').hidden=false;resetIcPoints();return}$('icEmpty').hidden=true;icImg.hidden=false;icImg.onload=()=>{resizeIc();resetView();resetIcPoints()};icImg.src=ic.image;if(icImg.complete){resizeIc();resetView();resetIcPoints()}}
+function resizeIc(){const r=icStage.getBoundingClientRect(),d=Math.max(1,devicePixelRatio||1);icCanvas.width=Math.round(r.width*d);icCanvas.height=Math.round(r.height*d);icCtx.setTransform(d,0,0,d,0,0)}
+function baseImageRect(){const r=icStage.getBoundingClientRect();if(!icImg.naturalWidth)return{x:0,y:0,w:r.width,h:r.height};const s=Math.min(r.width/icImg.naturalWidth,r.height/icImg.naturalHeight),w=icImg.naturalWidth*s,h=icImg.naturalHeight*s;return{x:(r.width-w)/2,y:(r.height-h)/2,w,h}}
+function applyView(){const b=baseImageRect();icImg.style.position='absolute';icImg.style.width=b.w+'px';icImg.style.height=b.h+'px';icImg.style.maxWidth='none';icImg.style.maxHeight='none';icImg.style.left=b.x+'px';icImg.style.top=b.y+'px';icImg.style.transform=`translate(${icPanX}px,${icPanY}px) scale(${icZoom})`;drawIc()}
+function imageToScreen(p){const b=baseImageRect();return{x:b.x+icPanX+p.x*b.w*icZoom,y:b.y+icPanY+p.y*b.h*icZoom}}
+function screenToImage(x,y){const b=baseImageRect();return{x:Math.max(0,Math.min(1,(x-b.x-icPanX)/(b.w*icZoom))),y:Math.max(0,Math.min(1,(y-b.y-icPanY)/(b.h*icZoom)))}}
+function angleABC(a,b,c){const u={x:a.x-b.x,y:a.y-b.y},w={x:c.x-b.x,y:c.y-b.y},d=u.x*w.x+u.y*w.y,n=Math.hypot(u.x,u.y)*Math.hypot(w.x,w.y);return Math.acos(Math.max(-1,Math.min(1,d/n)))*180/Math.PI}
+function calcIc(){if(!icKeys.every(k=>icPts[k]))return null;const p={};icKeys.forEach(k=>p[k]=imageToScreen(icPts[k]));return{hip:Math.max(0,180-angleABC(p.shoulder,p.hip,p.knee)),knee:Math.max(0,180-angleABC(p.hip,p.knee,p.ankle)),ankle:90-angleABC(p.knee,p.ankle,p.forefoot)}}
+function classify(v,lo,hi,label){if(v<lo)return{text:(lo-v).toFixed(1)+'° unter Referenz · '+label+' vermindert',cls:'warn'};if(v>hi)return{text:(v-hi).toFixed(1)+'° über Referenz · '+label+' vermehrt',cls:'warn'};return{text:'im Orientierungsbereich',cls:'good'}}
+function drawIc(){const r=icStage.getBoundingClientRect();icCtx.clearRect(0,0,r.width,r.height);const keys=icKeys.filter(k=>icPts[k]),p={};keys.forEach(k=>p[k]=imageToScreen(icPts[k]));if(keys.length>1){icCtx.strokeStyle='rgba(255,255,255,.88)';icCtx.lineWidth=1.7;icCtx.beginPath();icCtx.moveTo(p[keys[0]].x,p[keys[0]].y);keys.slice(1).forEach(k=>icCtx.lineTo(p[k].x,p[k].y));icCtx.stroke()}keys.forEach(k=>{const q=p[k];icCtx.beginPath();icCtx.fillStyle='rgba(22,138,130,.65)';icCtx.arc(q.x,q.y,6,0,Math.PI*2);icCtx.fill();icCtx.strokeStyle='white';icCtx.lineWidth=1;icCtx.stroke();icCtx.beginPath();icCtx.moveTo(q.x-10,q.y);icCtx.lineTo(q.x+10,q.y);icCtx.moveTo(q.x,q.y-10);icCtx.lineTo(q.x,q.y+10);icCtx.stroke();icCtx.fillStyle='white';icCtx.font='bold 8px -apple-system';icCtx.textAlign='center';icCtx.fillText(icLabels[k],q.x,q.y-13)});const m=calcIc();if(!m){clearIcMeasurements();return}$('hipVal').textContent=m.hip.toFixed(1)+'°';$('kneeVal').textContent=m.knee.toFixed(1)+'°';$('ankleVal').textContent=(m.ankle>=0?'+':'')+m.ankle.toFixed(1)+'°';const es=[['hipEval',classify(m.hip,20,30,'Hüftflexion')],['kneeEval',classify(m.knee,0,10,'Knieflexion')],['ankleEval',classify(m.ankle,0,5,'Dorsalextension')]];es.forEach(([id,e])=>{$(id).textContent=e.text;$(id).className='eval '+e.cls});const f=[];if(m.hip<20)f.push('verminderte Hüftflexion');else if(m.hip>30)f.push('vermehrte Hüftflexion');if(m.knee>10)f.push('vermehrte Knieflexion');if(m.ankle<0)f.push('OSG plantarflexierter als Orientierung');else if(m.ankle>5)f.push('vermehrte OSG-Dorsalextension');$('icFinding').textContent=f.length?'IC · kameraseitiges Referenzbein: '+f.join(' · '):'IC · kameraseitiges Referenzbein: gemessene Pilotwerte im Orientierungsbereich.'}
+function xy(e){const r=icStage.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}function dst(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}function mid(a,b){return{x:(a.x+b.x)/2,y:(a.y+b.y)/2}}
+function beginGesture(){const a=[...touches.values()];if(a.length<2)return;const m=mid(a[0],a[1]),b=baseImageRect();gesture={d:dst(a[0],a[1]),z:icZoom,ax:(m.x-b.x-icPanX)/(b.w*icZoom),ay:(m.y-b.y-icPanY)/(b.h*icZoom)};panStart=null;moved=true}
+function armPoint(){if(setIndex>=5)return;pointArmed=true;updateMode()}
+function placePoint(q){if(!pointArmed||setIndex>=5)return;icPts[icKeys[setIndex]]=screenToImage(q.x,q.y);setIndex++;pointArmed=false;updateIcPrompt();drawIc()}
+
+const icLoupe=$('icLoupe'),icLoupeCross=$('icLoupeCross'),loupeCtx=icLoupe.getContext('2d'),loupeCrossCtx=icLoupeCross.getContext('2d');
+function hideLoupe(){icLoupe.style.display='none';icLoupeCross.style.display='none'}
+function showLoupe(q){
+ if(!pointArmed||icImg.hidden)return hideLoupe();
+ const r=icStage.getBoundingClientRect(),size=150,margin=12;
+ let left=q.x+28,top=q.y-size-28;
+ if(left+size>r.width-margin)left=q.x-size-28;
+ if(top<margin)top=q.y+28;
+ left=Math.max(margin,Math.min(r.width-size-margin,left));
+ top=Math.max(margin,Math.min(r.height-size-margin,top));
+ for(const el of [icLoupe,icLoupeCross]){el.style.left=left+'px';el.style.top=top+'px';el.style.display='block'}
+ loupeCtx.clearRect(0,0,300,300);
+ const ip=screenToImage(q.x,q.y),zoom=3.2,sw=300/zoom,sh=300/zoom;
+ const sx=ip.x-sw/2,sy=ip.y-sh/2;
+ loupeCtx.drawImage(icImg,sx,sy,sw,sh,0,0,300,300);
+ loupeCrossCtx.clearRect(0,0,300,300);
+ loupeCrossCtx.strokeStyle='rgba(255,255,255,.95)';loupeCrossCtx.lineWidth=2;
+ loupeCrossCtx.beginPath();loupeCrossCtx.moveTo(150,110);loupeCrossCtx.lineTo(150,190);loupeCrossCtx.moveTo(110,150);loupeCrossCtx.lineTo(190,150);loupeCrossCtx.stroke();
+ loupeCrossCtx.beginPath();loupeCrossCtx.arc(150,150,12,0,Math.PI*2);loupeCrossCtx.stroke();
+}
+
+icCanvas.addEventListener('pointerdown',e=>{if(icImg.hidden)return;const q=xy(e);touches.set(e.pointerId,q);icCanvas.setPointerCapture(e.pointerId);moved=false;if(pointArmed&&touches.size===1){panStart=null;showLoupe(q);e.preventDefault();return}if(touches.size>=2){if(pendingTap){clearTimeout(pendingTap);pendingTap=null}beginGesture();e.preventDefault();return}panStart={x:q.x,y:q.y,px:icPanX,py:icPanY};e.preventDefault()});
+icCanvas.addEventListener('pointermove',e=>{if(!touches.has(e.pointerId))return;const q=xy(e);touches.set(e.pointerId,q);if(pointArmed&&touches.size===1){moved=false;showLoupe(q);e.preventDefault();return}if(touches.size>=2){if(!gesture)beginGesture();const a=[...touches.values()],m=mid(a[0],a[1]),b=baseImageRect();icZoom=Math.max(1,Math.min(4,gesture.z*dst(a[0],a[1])/Math.max(1,gesture.d)));icPanX=m.x-b.x-gesture.ax*b.w*icZoom;icPanY=m.y-b.y-gesture.ay*b.h*icZoom;if(icZoom<=1.001){icZoom=1;icPanX=icPanY=0}applyView();e.preventDefault();return}if(panStart&&dst(q,{x:panStart.x,y:panStart.y})>5){moved=true;icPanX=panStart.px+(q.x-panStart.x);icPanY=panStart.py+(q.y-panStart.y);applyView();e.preventDefault()}});
+icCanvas.addEventListener('pointerup',e=>{const q=xy(e),wasMoved=moved;touches.delete(e.pointerId);if(touches.size<2)gesture=null;if(!touches.size)panStart=null;if(pointArmed){hideLoupe();placePoint(q);lastTap=0;return}if(wasMoved)return;const now=Date.now();if(now-lastTap<320){if(pendingTap){clearTimeout(pendingTap);pendingTap=null}lastTap=0;armPoint();return}lastTap=now;pendingTap=setTimeout(()=>{pendingTap=null},340)});
+icCanvas.addEventListener('pointercancel',e=>{touches.delete(e.pointerId);gesture=null;panStart=null;hideLoupe()});
+$('icReset').onclick=resetIcPoints;$('icUndo').onclick=()=>{
+ if(pelvisSetIndex>0){pelvisSetIndex--;delete icPts[pelvisSetIndex===0?'sias':'sips'];pointArmed=false;updatePelvisUI();drawIc();return}
+ if(setIndex>0){setIndex--;delete icPts[icKeys[setIndex]];pointArmed=false;updateIcPrompt();drawIc()}
+};$('icLoadFrame').onclick=loadIcFrame;window.addEventListener('resize',()=>{resizeIc();applyView()});
+
+
+// ---- v0.7.5 · SIAS/SIPS Referenzpunkte + Beckenmessung ----
+function pelvisName(){return pelvisSetIndex===0?'SIAS':'SIPS'}
+function axisAngle(a,b){return Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI}
+function norm180(a){while(a>180)a-=360;while(a<-180)a+=360;return a}
+
+function updatePelvisUI(){
+  if(setIndex<5){
+    if(pointArmed)$('icMode').textContent='🎯 Referenzpunkt setzen: '+icNames[icKeys[setIndex]]+' · jetzt einmal tippen.';
+    else $('icMode').textContent='Bildmodus · Doppeltipp aktiviert '+icNames[icKeys[setIndex]]+'.';
+    return;
+  }
+  if(pelvisMode==='visible' && pelvisSetIndex<2){
+    if(pointArmed)$('icMode').textContent='🎯 Referenzpunkt setzen: '+pelvisName()+' · jetzt einmal tippen.';
+    else $('icMode').textContent='Beckenmessung · Doppeltipp aktiviert '+pelvisName()+'.';
+    $('icPrompt').textContent='Beckenmessung · '+pelvisName()+' als nächsten Referenzpunkt setzen.';
+    return;
+  }
+  $('icMode').textContent='✓ Alle benötigten Referenzpunkte gesetzt.';
+  $('icPrompt').textContent='✓ Alle Referenzpunkte gesetzt.';
+}
+
+const baseArmPoint_v062=armPoint;
+armPoint=function(){
+  if(setIndex<5){baseArmPoint_v062();return}
+  if(pelvisMode==='visible' && pelvisSetIndex<2){
+    pointArmed=true;
+    updatePelvisUI();
+  }
+};
+
+const basePlacePoint_v062=placePoint;
+placePoint=function(q){
+  if(setIndex<5){basePlacePoint_v062(q);return}
+  if(pointArmed && pelvisMode==='visible' && pelvisSetIndex<2){
+    const key=pelvisSetIndex===0?'sias':'sips';
+    icPts[key]=screenToImage(q.x,q.y);
+    pelvisSetIndex++;
+    pointArmed=false;
+    updatePelvisUI();
+    drawIc();
+  }
+};
+
+function drawPelvisPoint(key,label){
+  if(!icPts[key])return;
+  const q=imageToScreen(icPts[key]);
+  icCtx.beginPath();icCtx.fillStyle='rgba(180,85,20,.75)';icCtx.arc(q.x,q.y,6,0,Math.PI*2);icCtx.fill();
+  icCtx.strokeStyle='white';icCtx.lineWidth=1;icCtx.stroke();
+  icCtx.beginPath();icCtx.moveTo(q.x-10,q.y);icCtx.lineTo(q.x+10,q.y);icCtx.moveTo(q.x,q.y-10);icCtx.lineTo(q.x,q.y+10);icCtx.stroke();
+  icCtx.fillStyle='white';icCtx.font='bold 8px -apple-system';icCtx.textAlign='center';icCtx.fillText(label,q.x,q.y-13);
+}
+
+function updatePelvisAnalysis(){
+  const shoulder=icPts.shoulder&&imageToScreen(icPts.shoulder);
+  const hip=icPts.hip&&imageToScreen(icPts.hip);
+  const knee=icPts.knee&&imageToScreen(icPts.knee);
+
+  if(shoulder&&hip&&knee){
+    const trunk=axisAngle(hip,shoulder),femur=axisAngle(hip,knee);
+    let s=Math.abs(norm180(femur-trunk));
+    if(s>180)s=360-s;
+    $('surrogateHipVal').textContent=s.toFixed(1)+'°';
+    $('surrogateHipEval').textContent=pelvisMode==='hidden'?'Ersatzgröße · keine echte Hüftflexion':'Surrogat nur ergänzend';
+  }
+
+  if(pelvisMode==='visible' && icPts.sias && icPts.sips && hip && knee){
+    const sias=imageToScreen(icPts.sias),sips=imageToScreen(icPts.sips);
+    const pelvisAxis=axisAngle(sips,sias);
+    const tilt=Math.abs(norm180(pelvisAxis));
+    $('pelvisTiltVal').textContent=tilt.toFixed(1)+'°';
+    $('pelvisTiltEval').textContent='bildbasierte SIAS–SIPS-Neigung';
+
+    const pelvisPerp=pelvisAxis+90, femur=axisAngle(hip,knee);
+    let h=Math.abs(norm180(femur-pelvisPerp));
+    if(h>90)h=180-h;
+    h=Math.abs(h);
+    $('trueHipVal').textContent=h.toFixed(1)+'°';
+    $('trueHipEval').textContent='beckenbezogene 2D-Hüftmessung';
+    $('pelvisValidity').innerHTML='<b>Validität:</b> Messweg A · Hüftwinkel aus SIAS–SIPS-Beckenachse und Femurachse berechnet.';
+  }else if(pelvisMode==='hidden'){
+    $('pelvisTiltVal').textContent='—';
+    $('pelvisTiltEval').textContent='Becken verdeckt';
+    $('trueHipVal').textContent='—';
+    $('trueHipEval').textContent='nicht valide bestimmbar';
+    $('pelvisValidity').innerHTML='<b>Validität:</b> Beckenstellung nicht sicher beurteilbar. Rumpf-Femur-Winkel nur als Surrogat.';
+  }else{
+    $('pelvisTiltVal').textContent='—';
+    $('pelvisTiltEval').textContent='SIAS/SIPS noch unvollständig';
+    $('trueHipVal').textContent='—';
+    $('trueHipEval').textContent='noch nicht valide bestimmbar';
+    $('pelvisValidity').innerHTML='<b>Validität:</b> SIAS und SIPS noch nicht vollständig gesetzt.';
+  }
+}
+
+const baseDrawIc_v062=drawIc;
+drawIc=function(){
+  baseDrawIc_v062();
+  if(icPts.sias&&icPts.sips){
+    const a=imageToScreen(icPts.sias),b=imageToScreen(icPts.sips);
+    icCtx.strokeStyle='rgba(255,180,110,.95)';icCtx.lineWidth=2;
+    icCtx.beginPath();icCtx.moveTo(a.x,a.y);icCtx.lineTo(b.x,b.y);icCtx.stroke();
+  }
+  drawPelvisPoint('sias','SIAS');
+  drawPelvisPoint('sips','SIPS');
+  updatePelvisAnalysis();
+};
+
+function setPelvisMode(mode){
+  pelvisMode=mode;
+  pointArmed=false;
+  if(mode==='hidden'){
+    delete icPts.sias;delete icPts.sips;pelvisSetIndex=0;
+    $('pelvisModeInfo').textContent='Messweg B aktiv · Becken verdeckt. Rumpf-Femur-Winkel wird als Surrogat verwendet.';
+  }else{
+    pelvisSetIndex=(icPts.sias?1:0)+(icPts.sips?1:0);
+    $('pelvisModeInfo').textContent='Messweg A aktiv · Nach den fünf Standardpunkten: Doppeltipp aktiviert SIAS, danach SIPS.';
+  }
+  $('pelvisVisible').classList.toggle('primary',mode==='visible');
+  $('pelvisHidden').classList.toggle('primary',mode==='hidden');
+  updatePelvisUI();
+  drawIc();
+}
+
+$('pelvisVisible').onclick=()=>setPelvisMode('visible');
+$('pelvisHidden').onclick=()=>setPelvisMode('hidden');
+
+const baseUpdateIcPrompt_v062=updateIcPrompt;
+updateIcPrompt=function(){
+  baseUpdateIcPrompt_v062();
+  if(setIndex>=5)updatePelvisUI();
+};
+
+// ---- v0.7.5 · Initial Contact Befund & Interpretation ----
+const icQualIds=['qHeel','qForefoot','qPelvisDrop','qPelvisRot','qTrunkLean','qStepLength'];
+
+function currentIcMeasures(){
+  if(typeof calcIc!=='function')return null;
+  try{return calcIc()}catch(e){return null}
+}
+
+function getQualitativeFindings(){
+  const f=[];
+  if($('qHeel')?.checked)f.push('klarer Fersenkontakt');
+  if($('qForefoot')?.checked)f.push('Vor-/Mittelfußkontakt ohne eindeutigen Fersenkontakt');
+  if($('qPelvisDrop')?.checked)f.push('kontralaterale Beckenabsenkung');
+  if($('qPelvisRot')?.checked)f.push('auffällige Beckenrotation');
+  if($('qTrunkLean')?.checked)f.push('auffällige Rumpfneigung');
+  if($('qStepLength')?.checked)f.push('auffällige Schrittlänge');
+  return f;
+}
+
+function buildAutoInterpretation(){
+  const m=currentIcMeasures();
+  if(!m || !Number.isFinite(m.hip) || !Number.isFinite(m.knee) || !Number.isFinite(m.ankle)){
+    $('icAutoInterpretation').textContent='Noch keine vollständige IC-Messung vorhanden.';
+    return '';
+  }
+  const parts=[];
+  if(m.hip<20)parts.push(`Hüftflexion vermindert (${m.hip.toFixed(1)}°; Orientierung 20–30°)`);
+  else if(m.hip>30)parts.push(`Hüftflexion vermehrt (${m.hip.toFixed(1)}°; Orientierung 20–30°)`);
+  else parts.push(`Hüftflexion im Orientierungsbereich (${m.hip.toFixed(1)}°)`);
+
+  if(m.knee<0)parts.push(`Kniestreckung über Neutralstellung hinaus (${m.knee.toFixed(1)}°)`);
+  else if(m.knee>10)parts.push(`Knieflexion vermehrt (${m.knee.toFixed(1)}°; Orientierung 0–10°)`);
+  else parts.push(`Knieflexion im Orientierungsbereich (${m.knee.toFixed(1)}°)`);
+
+  if(m.ankle<0)parts.push(`OSG gegenüber der Orientierung plantarflexiert (${m.ankle.toFixed(1)}°)`);
+  else if(m.ankle>5)parts.push(`OSG-Dorsalextension vermehrt (${m.ankle.toFixed(1)}°; Orientierung 0–5°)`);
+  else parts.push(`OSG im Orientierungsbereich (${m.ankle.toFixed(1)}° DF)`);
+
+  const txt=parts.join(' · ');
+  $('icAutoInterpretation').textContent=txt;
+  return txt;
+}
+
+function buildIcReport(){
+  const auto=buildAutoInterpretation();
+  const qualitative=getQualitativeFindings();
+  const hypothesis=($('icHypothesis')?.value||'').trim();
+  const sections=[];
+  if(auto)sections.push(auto+'.');
+  if(qualitative.length)sections.push('Qualitativ zeigt sich '+qualitative.join(', ')+'.');
+  if(hypothesis)sections.push('PT-Hypothese: '+hypothesis);
+  $('icReport').innerHTML='<b>IC-Kurzbefund:</b><br>'+(sections.length?sections.join(' '):'Noch keine auswertbaren Angaben vorhanden.');
+}
+
+$('buildIcReport').onclick=buildIcReport;
+$('clearIcReport').onclick=()=>{
+  icQualIds.forEach(id=>{if($(id))$(id).checked=false});
+  if($('icHypothesis'))$('icHypothesis').value='';
+  $('icReport').innerHTML='<b>IC-Kurzbefund:</b><br>Noch nicht erstellt.';
+};
+
+icQualIds.forEach(id=>{
+  if($(id))$(id).addEventListener('change',buildIcReport);
+});
+if($('icHypothesis'))$('icHypothesis').addEventListener('input',()=>{ if(($('icReport').textContent||'').includes('IC-Kurzbefund')) buildIcReport(); });
+
+const originalDrawIc = drawIc;
+drawIc = function(){
+  originalDrawIc();
+  buildAutoInterpretation();
+};
+
+// Extend case persistence with qualitative IC data and report.
+const originalBuildCase = buildCase;
+buildCase = function(){
+  const data=originalBuildCase();
+  data.icClinical={
+    qualitative:Object.fromEntries(icQualIds.map(id=>[id,!!($(id)?.checked)])),
+    hypothesis:($('icHypothesis')?.value||''),
+    report:($('icReport')?.innerText||'')
+  };
+  return data;
+};
+
+// ---- v0.7.5 · automatische Referenzpunkt-Vorschläge ----
+function confPct(v){return Number.isFinite(v)?Math.round(v*100)+'%':'—'}
+function confClass(v){return v>=.75?'high':v>=.5?'mid':'low'}
+function setConf(id,v){
+ const el=$(id);el.textContent=confPct(v);
+ el.style.color=v>=.75?'#2f8b57':v>=.5?'#a46a0d':'#a33434';
+}
+function clearAutoConfidence(){
+ autoConfidence={};
+ ['confShoulder','confHip','confKnee','confAnkle','confFoot'].forEach(id=>$(id).textContent='—');
+}
+function lmScore(lms,ids){
+ const vals=ids.map(i=>Number(lms[i]?.visibility ?? 0));
+ return vals.reduce((a,b)=>a+b,0)/Math.max(1,vals.length);
+}
+function chooseCameraSide(lms){
+ const left=[11,23,25,27,31], right=[12,24,26,28,32];
+ return lmScore(lms,left)>=lmScore(lms,right)?'left':'right';
+}
+function proposalFromLandmarks(lms,side){
+ const ids=side==='left'
+   ? {shoulder:11,hip:23,knee:25,ankle:27,forefoot:31}
+   : {shoulder:12,hip:24,knee:26,ankle:28,forefoot:32};
+ const out={},confidence={};
+ Object.entries(ids).forEach(([k,i])=>{
+   const p=lms[i];
+   if(p){out[k]={x:Math.max(0,Math.min(1,p.x)),y:Math.max(0,Math.min(1,p.y))};confidence[k]=Number(p.visibility ?? 0)}
+ });
+ return {out,confidence};
+}
+async function runAutoPose(){
+ const ic=saved[0];
+ if(!ic||!ic.image){
+   $('autoStatus').textContent='Bitte zuerst einen Initial-Contact-Frame übernehmen.';
+   return;
+ }
+ $('autoPose').disabled=true;
+ $('autoStatus').textContent='Pose-Modell wird geladen … beim ersten Mal kann das einige Sekunden dauern.';
+ try{
+   const pose=await ensurePoseModel();
+   const img=new Image();
+   img.src=ic.image;
+   await img.decode();
+
+   $('autoStatus').textContent='IC-Frame wird lokal auf dem iPad analysiert …';
+
+   const result=await new Promise(async (resolve,reject)=>{
+     let finished=false;
+     const timer=setTimeout(()=>{
+       if(!finished){finished=true;reject(new Error('Pose-Erkennung hat zu lange gebraucht'))}
+     },12000);
+
+     pose.onResults((res)=>{
+       if(finished)return;
+       finished=true;
+       clearTimeout(timer);
+       resolve(res);
+     });
+
+     try{
+       await pose.send({image:img});
+     }catch(e){
+       if(!finished){
+         finished=true;
+         clearTimeout(timer);
+         reject(e);
+       }
+     }
+   });
+
+   const lms=result?.poseLandmarks;
+   if(!lms)throw new Error('Keine Person sicher erkannt');
+
+   const side=chooseCameraSide(lms);
+   const {out,confidence}=proposalFromLandmarks(lms,side);
+   if(Object.keys(out).length<4)throw new Error('Zu wenige Referenzpunkte erkannt');
+
+   const sias=icPts.sias,sips=icPts.sips;
+   icPts={...out};
+   if(sias)icPts.sias=sias;
+   if(sips)icPts.sips=sips;
+
+   setIndex=5;
+   pointArmed=false;
+   autoConfidence=confidence;
+
+   setConf('confShoulder',confidence.shoulder);
+   setConf('confHip',confidence.hip);
+   setConf('confKnee',confidence.knee);
+   setConf('confAnkle',confidence.ankle);
+   setConf('confFoot',confidence.forefoot);
+
+   const vals=Object.values(confidence).filter(Number.isFinite);
+   const avg=vals.reduce((a,b)=>a+b,0)/Math.max(1,vals.length);
+
+   $('autoStatus').textContent='Vorschlag erstellt · kameraseitige Pose automatisch als '
+     +(side==='left'?'linke':'rechte')
+     +' Modellseite gewählt · mittlere Sicherheit '
+     +Math.round(avg*100)
+     +'%. Bitte Punkte fachlich prüfen.';
+
+   if(typeof updateIcPrompt==='function')updateIcPrompt();
+   if(typeof updatePelvisUI==='function')updatePelvisUI();
+   drawIc();
+
+ }catch(err){
+   $('autoStatus').textContent='Automatische Erkennung nicht verfügbar: '
+     +(err?.message||err)
+     +'. Die manuelle Messung bleibt vollständig nutzbar.';
+ }finally{
+   $('autoPose').disabled=false;
+ }
+}
+$('autoPose').onclick=runAutoPose;
+$('autoClear').onclick=()=>{
+ clearAutoConfidence();
+ $('autoStatus').textContent='Automatische Vorschläge verworfen. Referenzpunkte können wieder manuell gesetzt werden.';
+ resetIcPoints();
+};
+
+// Store confidence metadata with the case, but never treat it as a clinical measurement.
+if(typeof buildCase==='function'){
+ const buildCase_v070=buildCase;
+ buildCase=function(){
+   const data=buildCase_v070();
+   data.autoPose={confidence:autoConfidence||{}};
+   return data;
+ };
+}
+
+
+if($('correctAutoPoint')){
+ $('correctAutoPoint').onclick=()=>{
+   const k=$('correctionTarget').value;
+   if(!icKeys.includes(k))return;
+   delete icPts[k];
+   setIndex=icKeys.indexOf(k);
+   pointArmed=true;
+   $('referenceConfirmState').textContent='Punktkorrektur aktiv · '+icNames[k]+' mit Lupe setzen und anschließend erneut bestätigen.';
+   $('referenceConfirmState').className='confirmState pending';
+   $('icMode').textContent='🎯 Korrektur: '+icNames[k]+' · Finger auflegen, mit Lupe fein positionieren und loslassen.';
+   const once=()=>{
+     if(icPts[k]){
+       setIndex=5;
+       icCanvas.removeEventListener('pointerup',once);
+       drawIc();
+     }
+   };
+   icCanvas.addEventListener('pointerup',once);
+   drawIc();
+ };
+}
+
+
+// ---- v0.7.5 · klinische Freigabe der Referenzpunkte ----
+let confirmedReferenceSignature='';
+
+function referenceSignature(){
+ const keys=['shoulder','hip','knee','ankle','forefoot'];
+ return keys.map(k=>{
+   const p=icPts?.[k];
+   return p ? k+':'+Number(p.x).toFixed(6)+','+Number(p.y).toFixed(6) : k+':-';
+ }).join('|');
+}
+function referencesComplete(){
+ return ['shoulder','hip','knee','ankle','forefoot'].every(k=>icPts?.[k]);
+}
+function referencesConfirmed(){
+ return referencesComplete() && confirmedReferenceSignature===referenceSignature();
+}
+function updateReferenceConfirmationUI(){
+ const el=$('referenceConfirmState');
+ if(!el)return;
+ if(referencesConfirmed()){
+   el.textContent='✓ Referenzpunkte klinisch bestätigt · Winkel und IC-Befund freigegeben.';
+   el.className='confirmState ok';
+ }else{
+   el.textContent=referencesComplete()
+     ?'Referenzpunkte vorhanden, aber noch nicht bestätigt · bitte prüfen/korrigieren und bestätigen.'
+     :'Referenzpunkte unvollständig · Winkel und klinischer IC-Befund sind gesperrt.';
+   el.className='confirmState pending';
+ }
+}
+$('confirmReferencePoints').onclick=()=>{
+ if(!referencesComplete()){
+   $('referenceConfirmState').textContent='Bestätigung nicht möglich · zuerst alle fünf Referenzpunkte setzen.';
+   $('referenceConfirmState').className='confirmState pending';
+   return;
+ }
+ confirmedReferenceSignature=referenceSignature();
+ updateReferenceConfirmationUI();
+ drawIc();
+};
+
+// Wrap the final drawing routine: geometry may be shown, but clinical values remain locked
+// until the exact current set of five points has been confirmed.
+const drawIcBeforeConfirmGate_v072=drawIc;
+drawIc=function(){
+ drawIcBeforeConfirmGate_v072();
+ if(!referencesConfirmed()){
+   clearIcMeasurements();
+   $('icFinding').textContent='IC-Befund gesperrt · Referenzpunkte zuerst prüfen und bestätigen.';
+   $('hipVal').textContent='🔒';
+   $('kneeVal').textContent='🔒';
+   $('ankleVal').textContent='🔒';
+ }
+ updateReferenceConfirmationUI();
+};
+
+// Gate pelvis-derived clinical outputs as well.
+const updatePelvisAnalysisBeforeConfirm_v072=updatePelvisAnalysis;
+updatePelvisAnalysis=function(){
+ if(!referencesConfirmed()){
+   $('surrogateHipVal').textContent='🔒';
+   $('surrogateHipEval').textContent='Referenzpunkte noch nicht bestätigt';
+   $('pelvisTiltVal').textContent=icPts.sias&&icPts.sips?'—':'—';
+   $('pelvisTiltEval').textContent='Freigabe ausstehend';
+   $('trueHipVal').textContent='🔒';
+   $('trueHipEval').textContent='Referenzpunkte noch nicht bestätigt';
+   $('pelvisValidity').innerHTML='<b>Validität:</b> Klinische Winkelberechnung erst nach Bestätigung der fünf Standard-Referenzpunkte.';
+   return;
+ }
+ updatePelvisAnalysisBeforeConfirm_v072();
+};
+
+// A newly generated auto proposal always needs a fresh human confirmation.
+const runAutoPoseBeforeConfirm_v072=runAutoPose;
+runAutoPose=async function(){
+ confirmedReferenceSignature='';
+ await runAutoPoseBeforeConfirm_v072();
+ updateReferenceConfirmationUI();
+ drawIc();
+};
+$('autoPose').onclick=runAutoPose;
+
+// Persist the fact that a specific geometry was confirmed; reopening never silently
+// grants confirmation to changed points.
+const buildCaseBeforeConfirm_v072=buildCase;
+buildCase=function(){
+ const data=buildCaseBeforeConfirm_v072();
+ data.referenceReview={
+   confirmed:referencesConfirmed(),
+   signature:referencesConfirmed()?confirmedReferenceSignature:'',
+   confirmedAt:referencesConfirmed()?new Date().toISOString():null
+ };
+ return data;
+};
+
+// ---- v0.7.5 · globale sichtbare Button-Quittierung ----
+document.addEventListener('click',e=>{
+ const b=e.target.closest&&e.target.closest('button');
+ if(!b||b.disabled)return;
+ b.classList.remove('tapAck');
+ void b.offsetWidth;
+ b.classList.add('tapAck');
+ setTimeout(()=>b.classList.remove('tapAck'),650);
+},true);
+
+// ---- v0.7.5 · IC-Zyklus-Serie ----
+let icCycleSeries=[];
+let selectedCycleId=null;
+let cycleSelectionMode='manual';
+
+function median(vals){
+ const a=vals.filter(Number.isFinite).slice().sort((x,y)=>x-y);
+ if(!a.length)return NaN;
+ const m=Math.floor(a.length/2);
+ return a.length%2?a[m]:(a[m-1]+a[m])/2;
+}
+function cycleDistance(c,center){
+ const dh=c.measures.hip-center.hip, dk=c.measures.knee-center.knee, da=c.measures.ankle-center.ankle;
+ return Math.sqrt(dh*dh+dk*dk+da*da);
+}
+function cycleCenter(){
+ return {
+   hip:median(icCycleSeries.map(c=>c.measures.hip)),
+   knee:median(icCycleSeries.map(c=>c.measures.knee)),
+   ankle:median(icCycleSeries.map(c=>c.measures.ankle))
+ };
+}
+function typicalCycle(){
+ if(!icCycleSeries.length)return null;
+ const ctr=cycleCenter();
+ return icCycleSeries.slice().sort((a,b)=>cycleDistance(a,ctr)-cycleDistance(b,ctr))[0];
+}
+function outlierCycle(){
+ if(!icCycleSeries.length)return null;
+ const ctr=cycleCenter();
+ return icCycleSeries.slice().sort((a,b)=>cycleDistance(b,ctr)-cycleDistance(a,ctr))[0];
+}
+function rangeText(vals){
+ const a=vals.filter(Number.isFinite);
+ if(!a.length)return '—';
+ return (Math.max(...a)-Math.min(...a)).toFixed(1)+'°';
+}
+function renderIcSeries(){
+ const body=$('seriesBody'); if(!body)return;
+ body.innerHTML='';
+ icCycleSeries.forEach((c,i)=>{
+   const tr=document.createElement('tr');
+   if(c.id===selectedCycleId)tr.className='selected';
+   tr.innerHTML='<td>IC '+(i+1)+'<br><small>F '+c.frame+'</small></td>'+
+     '<td>'+c.measures.hip.toFixed(1)+'°</td>'+
+     '<td>'+c.measures.knee.toFixed(1)+'°</td>'+
+     '<td>'+(c.measures.ankle>=0?'+':'')+c.measures.ankle.toFixed(1)+'°</td>'+
+     '<td><button data-cycle="'+c.id+'">Wählen</button></td>';
+   body.appendChild(tr);
+ });
+ body.querySelectorAll('button[data-cycle]').forEach(b=>b.onclick=()=>{
+   selectedCycleId=b.dataset.cycle;
+   cycleSelectionMode='manual';
+   updateCycleChoice();
+   renderIcSeries();
+ });
+ $('seriesCount').textContent=icCycleSeries.length;
+ $('seriesKneeRange').textContent=rangeText(icCycleSeries.map(c=>c.measures.knee));
+ $('seriesAnkleRange').textContent=rangeText(icCycleSeries.map(c=>c.measures.ankle));
+ $('seriesStatus').textContent=icCycleSeries.length
+   ?icCycleSeries.length+' bestätigte IC-Schritte gespeichert · Mittelwerte werden nicht als klinische Auswahl erzwungen.'
+   :'Noch keine IC-Schritte in der Serie.';
+ updateCycleChoice();
+}
+function updateCycleChoice(){
+ ['chooseTypical','chooseOutlier','chooseManual'].forEach(id=>$(id)?.classList.remove('active'));
+ const t=typicalCycle(),o=outlierCycle(),sel=icCycleSeries.find(c=>c.id===selectedCycleId);
+ if(cycleSelectionMode==='typical')$('chooseTypical')?.classList.add('active');
+ if(cycleSelectionMode==='outlier')$('chooseOutlier')?.classList.add('active');
+ if(cycleSelectionMode==='manual')$('chooseManual')?.classList.add('active');
+
+ if(!icCycleSeries.length){
+   $('cycleChoiceInfo').textContent='Mit mindestens drei Schritten kann RunAssist einen typischen und einen auffälligsten Schritt vorschlagen.';
+   return;
+ }
+ let msg='';
+ if(icCycleSeries.length<3)msg='Noch zu wenige Schritte für einen belastbaren Serienvorschlag. ';
+ if(cycleSelectionMode==='typical'&&t)msg+='Typischer Vorschlag: IC '+(icCycleSeries.indexOf(t)+1)+' · kleinste Abweichung vom Serienmedian.';
+ else if(cycleSelectionMode==='outlier'&&o)msg+='Auffälliger Vorschlag: IC '+(icCycleSeries.indexOf(o)+1)+' · größte kombinierte Winkelabweichung vom Serienmedian.';
+ else if(sel)msg+='Therapeutisch ausgewählt: IC '+(icCycleSeries.indexOf(sel)+1)+'. Diese Auswahl hat Vorrang vor der Statistik.';
+ else msg+='Bitte einen Schritt auswählen.';
+ $('cycleChoiceInfo').textContent=msg;
+}
+$('addIcCycle').onclick=()=>{
+ if(!referencesConfirmed()){
+   $('seriesStatus').textContent='Nicht übernommen · Referenzpunkte dieses IC zuerst klinisch bestätigen.';
+   $('seriesStatus').className='status warn';
+   return;
+ }
+ const m=calcIc();
+ if(!m)return;
+ const ic=saved[0];
+ const item={
+   id:'ic_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),
+   time:ic?.time??v.currentTime,
+   frame:ic?.frame??Math.round(v.currentTime*fps),
+   measures:{hip:m.hip,knee:m.knee,ankle:m.ankle},
+   points:JSON.parse(JSON.stringify(icPts)),
+   image:ic?.image||''
+ };
+ icCycleSeries.push(item);
+ selectedCycleId=item.id;
+ cycleSelectionMode='manual';
+ $('seriesStatus').className='status ok';
+ renderIcSeries();
+};
+$('clearIcSeries').onclick=()=>{
+ icCycleSeries=[];selectedCycleId=null;cycleSelectionMode='manual';renderIcSeries();
+};
+$('chooseTypical').onclick=()=>{
+ if(icCycleSeries.length<3){$('cycleChoiceInfo').textContent='Bitte zuerst mindestens drei bestätigte IC-Schritte erfassen.';return}
+ const c=typicalCycle();selectedCycleId=c?.id||null;cycleSelectionMode='typical';renderIcSeries();
+};
+$('chooseOutlier').onclick=()=>{
+ if(icCycleSeries.length<3){$('cycleChoiceInfo').textContent='Bitte zuerst mindestens drei bestätigte IC-Schritte erfassen.';return}
+ const c=outlierCycle();selectedCycleId=c?.id||null;cycleSelectionMode='outlier';renderIcSeries();
+};
+$('chooseManual').onclick=()=>{
+ cycleSelectionMode='manual';updateCycleChoice();
+};
+
+// Extend case export with the series. Older case files remain readable because the field is optional.
+const buildCaseBeforeSeries_v073=buildCase;
+buildCase=function(){
+ const data=buildCaseBeforeSeries_v073();
+ data.icCycleSeries=JSON.parse(JSON.stringify(icCycleSeries));
+ data.icCycleSelection={mode:cycleSelectionMode,selectedCycleId:selectedCycleId};
+ return data;
+};
+
+// Restore v0.7.5 series on opening a compatible case.
+const openCaseChangeBeforeSeries_v073=$('openCase').onchange;
+$('openCase').onchange=async function(e){
+ await openCaseChangeBeforeSeries_v073.call(this,e);
+ try{
+   const f=e.target.files&&e.target.files[0];
+   if(!f)return;
+   const data=JSON.parse(await f.text());
+   icCycleSeries=Array.isArray(data.icCycleSeries)?data.icCycleSeries:[];
+   cycleSelectionMode=data.icCycleSelection?.mode||'manual';
+   selectedCycleId=data.icCycleSelection?.selectedCycleId||null;
+   renderIcSeries();
+ }catch(_){}
+};
+renderIcSeries();
+// ---- v0.7.5 · Quick Mark ----
+let quickMarkActive=false;
+function renderQuickMark(){
+ document.querySelectorAll('.quickMarkStep').forEach(el=>{const k=el.dataset.qm;el.classList.toggle('done',!!icPts[k]);el.classList.toggle('active',quickMarkActive&&setIndex<5&&icKeys[setIndex]===k);});
+ if(!$('quickMarkStatus'))return;
+ if(quickMarkActive&&setIndex<5)$('quickMarkStatus').textContent=(setIndex+1)+'/5 · '+icNames[icKeys[setIndex]]+' antippen.';
+ else if(['shoulder','hip','knee','ankle','forefoot'].every(k=>icPts[k]))$('quickMarkStatus').textContent=referencesConfirmed()?'✓ Fünf Punkte gesetzt und bestätigt · Winkel/Befund freigegeben.':'✓ Fünf Punkte gesetzt · jetzt Referenzpunkte bestätigen.';
+ else $('quickMarkStatus').textContent='Bereit · Quick Mark starten.';
+}
+function beginQuickMark(clearFirst){
+ if(clearFirst){['shoulder','hip','knee','ankle','forefoot'].forEach(k=>delete icPts[k]);confirmedReferenceSignature='';}
+ quickMarkActive=true;setIndex=0;pointArmed=true;$('icMode').textContent='🎯 Quick Mark · 1/5 Schulter antippen.';renderQuickMark();drawIc();
+}
+$('startQuickMark').onclick=()=>beginQuickMark(false);$('restartQuickMark').onclick=()=>beginQuickMark(true);
+icCanvas.addEventListener('pointerup',()=>{if(!quickMarkActive)return;setTimeout(()=>{if(setIndex>=5){quickMarkActive=false;pointArmed=false;$('icMode').textContent='✓ Quick Mark vollständig · Punkte prüfen und bestätigen.';}else{pointArmed=true;$('icMode').textContent='🎯 Quick Mark · '+(setIndex+1)+'/5 '+icNames[icKeys[setIndex]]+' antippen.';}renderQuickMark();},0);},false);
+const drawIcBeforeQuickMark_v074=drawIc;drawIc=function(){drawIcBeforeQuickMark_v074();renderQuickMark();};
+renderQuickMark();
+
+renderPhases();upd();loadIcFrame();
+$('recordingPlane').onchange=updateSetup;$('filmedSide').onchange=updateSetup;$('gaitSpeed').oninput=updateSetup;$('captureQuality').onchange=updateSetup;
+$('buildSummary').onclick=buildObjectiveSummary;
+updateSetup();
+</script>
+<div style="text-align:center;color:#6b7b7d;font-size:10px;padding:18px">Build 0.8.8 · 2026-09-28</div>
+<script>
+(()=>{
+ const names=['Initial Contact','Loading Response','Early Mid Stance','Late Mid Stance','Terminal Stance','Pre-Swing','Initial Swing','Mid Swing','Terminal Swing'];
+ let p=0, cyc=0;
+ const $x=id=>document.getElementById(id);
+ function targetButton(){
+   const slot = cyc===0 ? 'A' : 'B';
+   return document.querySelector('[data-capture="'+p+'"][data-slot="'+slot+'"]');
+ }
+ function render(){
+   const done=p+cyc*9;
+   $x('capTitle').textContent='Zyklus '+(cyc+1)+' · '+names[p];
+   $x('capProgress').textContent='Fortschritt '+done+'/18 · '+names.map((n,i)=>i===p?'●':(i<p||cyc===1?'✓':'○')).join(' ');
+ }
+ function stepFrame(dir){
+   const v=document.querySelector('video');
+   if(!v)return;
+   v.pause();
+   v.currentTime=Math.max(0,Math.min(v.duration||1e9,(v.currentTime||0)+dir/30));
+ }
+ $x('capPrevFrame').onclick=()=>stepFrame(-1);
+ $x('capNextFrame').onclick=()=>stepFrame(1);
+ $x('capSave').onclick=()=>{
+   const b=targetButton();
+   if(!b){alert('Phasen-Speicher nicht gefunden.');return;}
+   b.click();
+   $x('capSave').textContent='✓ GESPEICHERT';
+   setTimeout(()=>{$x('capSave').textContent='✓ AKTUELLEN FRAME ÜBERNEHMEN';},450);
+   if(p<8)p++; else if(cyc===0){cyc=1;p=0;} else {p=8; $x('capTitle').textContent='Beide Zyklen vollständig ✓'; $x('capProgress').textContent='18/18 gespeichert · jetzt phasenweise befunden'; return;}
+   render();
+ };
+ $x('capPrevPhase').onclick=()=>{if(p>0)p--;else if(cyc>0){cyc--;p=8;}render();};
+ $x('capReset').onclick=()=>{p=0;cyc=0;render();};
+ render();
+})();
+</script>
+<style>#raDock{position:fixed;left:10px;right:10px;bottom:10px;z-index:9999;background:white;border:2px solid #86c9c7;border-radius:16px;padding:10px;box-shadow:0 8px 28px #0004}#raDock .r{display:grid;grid-template-columns:1fr 1fr;gap:8px}#raDock button{min-height:42px}#raSave{width:100%;margin:8px 0;background:#087f83;color:white;font-weight:800;font-size:16px}#raTitle{font-weight:800;color:#075f61;font-size:17px}#raProg{font-size:11px;color:#667;margin:4px 0 7px}body{padding-bottom:190px!important}</style>
+<div id="raDock"><div id="raTitle"></div><div id="raProg"></div><div class="r"><button id="raB">← Frame</button><button id="raF">Frame →</button></div><button id="raSave">✓ ÜBERNEHMEN &amp; WEITER</button><div class="r"><button id="raPrev">← Phase zurück</button><button id="raFind">Zur Befundung ↓</button></div></div>
+<script>(()=>{const n=['Initial Contact','Loading Response','Early Mid Stance','Late Mid Stance','Terminal Stance','Pre-Swing','Initial Swing','Mid Swing','Terminal Swing'];let p=0,c=0;const E=x=>document.getElementById(x);function draw(){E('raTitle').textContent='Zyklus '+(c+1)+' · '+n[p];E('raProg').textContent='Erfassung '+(c*9+p)+'/18'}function frame(d){let v=document.querySelector('video');if(!v)return;v.pause();v.currentTime=Math.max(0,Math.min(v.duration||99999,(v.currentTime||0)+d/30))}E('raB').onclick=()=>frame(-1);E('raF').onclick=()=>frame(1);E('raSave').onclick=()=>{let slot=c===0?'A':'B',b=document.querySelector('[data-capture="'+p+'"][data-slot="'+slot+'"]');if(!b){alert('Speicherziel nicht gefunden');return}b.click();E('raSave').textContent='✓ GESPEICHERT';if(p<8)p++;else if(c===0){c=1;p=0}else{E('raTitle').textContent='Beide Zyklen vollständig ✓';E('raProg').textContent='18/18 · Erfassung abschließen';E('raSave').textContent='✓ ERFASSUNG ABSCHLIESSEN';E('raSave').onclick=()=>{E('raDock').style.display='none';};return}draw();setTimeout(()=>E('raSave').textContent='✓ ÜBERNEHMEN & WEITER',350)};E('raPrev').onclick=()=>{if(p>0)p--;else if(c){c--;p=8}draw()};E('raFind').onclick=()=>{let s=[...document.querySelectorAll('section')].find(x=>x.textContent.includes('Gangphasen · Zwei Zyklen'));if(s)s.scrollIntoView({behavior:'smooth'})};draw()})();</script></body>
+</html>
